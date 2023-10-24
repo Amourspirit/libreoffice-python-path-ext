@@ -7,6 +7,11 @@
       <value></value>
     </prop>
   </node>
+  <node oor:name="PyPaths">
+    <prop oor:name="PyPathsList" oor:type="oor:string-list">
+      <value></value>
+    </prop>
+  </node>
   <node oor:name="Logging">
     <prop oor:name="LogFile" oor:type="xs:string">
       <value>___log_file___</value>

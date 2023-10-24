@@ -36,15 +36,16 @@ def add_local_path_to_sys_path() -> None:
 
 add_local_path_to_sys_path()
 
-from ___lo_pip___.dialog.handler import logger_options
+from ___lo_pip___.adapter.top_window_listener import TopWindowListener
 from ___lo_pip___.config import Config
+from ___lo_pip___.dialog.handler import logger_options
+from ___lo_pip___.events.args.event_args import EventArgs
+from ___lo_pip___.events.lo_events import LoEvents
+from ___lo_pip___.events.named_events.startup_events import StartupNamedEvent
+from ___lo_pip___.events.startup.startup_monitor import StartupMonitor
 from ___lo_pip___.install.install_pip import InstallPip
 from ___lo_pip___.lo_util.util import Util
-from ___lo_pip___.adapter.top_window_listener import TopWindowListener
-from ___lo_pip___.events.lo_events import LoEvents
-from ___lo_pip___.events.args.event_args import EventArgs
-from ___lo_pip___.events.startup.startup_monitor import StartupMonitor
-from ___lo_pip___.events.named_events.startup_events import StartupNamedEvent
+from ___lo_pip___.settings.py_paths import PyPathsSettings
 
 # endregion imports
 
@@ -149,6 +150,7 @@ class ___lo_implementation_name___(unohelper.Base, XJob):
             self._add_py_req_pkgs_to_sys_path()
             self._add_pure_pkgs_to_sys_path()
             self._add_site_package_dir_to_sys_path()
+            self._add_py_paths_to_sys_path()
             if self._config.log_level < 20:  # Less than INFO
                 self._show_extra_debug_info()
                 # self._config.extension_info.log_extensions(self._logger)
@@ -340,6 +342,14 @@ class ___lo_implementation_name___(unohelper.Base, XJob):
             return
         result = self._session.register_path(self._config.site_packages, True)
         self._log_sys_path_register_result(self._config.site_packages, result)
+
+    def _add_py_paths_to_sys_path(self) -> None:
+        py_paths = PyPathsSettings().py_paths
+        if not py_paths:
+            self._logger.debug("No python paths to add to sys.path")
+        for pth in py_paths:
+            result = self._session.register_path(pth, True)
+            self._log_sys_path_register_result(pth, result)
 
     def _log_sys_path_register_result(self, pth: Path | str, result: RegisterPathKind) -> None:
         if not isinstance(pth, str):
@@ -587,6 +597,14 @@ g_ImplementationHelper.addImplementation(___lo_implementation_name___, implement
 
 g_ImplementationHelper.addImplementation(
     logger_options.OptionsDialogHandler, logger_options.IMPLEMENTATION_NAME, (logger_options.IMPLEMENTATION_NAME,)
+)
+
+from ___lo_pip___.dialog.handler import py_paths_options
+
+g_ImplementationHelper.addImplementation(
+    py_paths_options.OptionsDialogHandler,
+    py_paths_options.IMPLEMENTATION_NAME,
+    (py_paths_options.IMPLEMENTATION_NAME,),
 )
 
 # uncomment here and int options.xcu to use the example dialog

@@ -12,6 +12,13 @@
                 </info>
             </prop>
         </group>
+        <group oor:name="PyPaths">
+            <prop oor:name="PyPathsList" oor:type="oor:string-list">
+                <info>
+                    <desc>Paths to include in the python sys.path</desc>
+                </info>
+            </prop>
+        </group>
         <group oor:name="Logging">
             <prop oor:name="LogFile" oor:type="xs:string">
                 <info>
