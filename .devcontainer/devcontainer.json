@@ -7,8 +7,8 @@
 	},
 	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
 	"dockerComposeFile": "docker-compose.yml",
-	"service": "lo_pip_app",
-	"workspaceFolder": "/workspace/libreoffice_pip_ext",
+	"service": "lo_python_path_app",
+	"workspaceFolder": "/workspace/lo_python_path_ext",
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	// "features": {},
 
