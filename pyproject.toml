@@ -1,9 +1,9 @@
-# See: https://github.com/Amourspirit/python-libreoffice-pip/wiki/pyproject.toml
+# See: https://github.com/Amourspirit/libreoffice-python-path-ext/wiki/pyproject.toml
 [tool.oxt.config]
 auto_install_in_site_packages = true
 build_dir = "build"
 dist_dir = "dist" # should be changed to someting like dist, tmp_dist is not included in git
-install_wheel = true
+install_wheel = false
 oxt_name = "PyPath"
 py_pkg_dir = "py_pkgs"
 py_pkg_files = []
@@ -12,7 +12,7 @@ token_file_ext = ["txt", "xml", "xcu", "xcs"]
 update_file = "update.xml"
 zip_preinstall_pure = true
 window_timeout = 5 # number of seconds to wait for window to appear
-dialog_desktop_owned = true # determines if the dialog is owned by the desktop window
+dialog_desktop_owned = false # determines if the dialog is owned by the desktop window
 resource_dir_name = "resources"
 resource_properties_prefix = "pipstrings"
 default_locale = ["en", "US"]
@@ -28,21 +28,21 @@ lo_implementation_name = "PyPathRunner"
 display_name = "LibreOffice Python Path"
 description = "Allows for including python packages in LibreOffice that are not included by default."
 publisher = "AmourSpirit"
-publisher_url = "https://github.com/Amourspirit/python-libreoffice-pip"
-update_url_xml = "https://raw.githubusercontent.com/Amourspirit/python-libreoffice-pip/main/___dist_dir___/___update_file___"
-update_url_oxt = "https://raw.githubusercontent.com/Amourspirit/python-libreoffice-pip/main/___dist_dir___/___oxt_name___.oxt"
+publisher_url = "https://github.com/Amourspirit/libreoffice-python-path-ext"
+update_url_xml = "https://raw.githubusercontent.com/Amourspirit/libreoffice-python-path-ext/main/___dist_dir___/___update_file___"
+update_url_oxt = "https://raw.githubusercontent.com/Amourspirit/libreoffice-python-path-ext/main/___dist_dir___/___oxt_name___.oxt"
 url_pip = 'https://bootstrap.pypa.io/get-pip.py'
 # set log_file to "" to disable logging
 log_file = "pypath_install.log"
 log_name = "LO PY Path"
-log_level = "DEBUG" # NONE, DEBUG, INFO, WARNING, ERROR, CRITICAL
+log_level = "ERROR" # NONE, DEBUG, INFO, WARNING, ERROR, CRITICAL
 log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 log_add_console = false # should be false for production
 lo_pip = "lo_py_path"
 platform = "all"
 startup_event = "OnStartApp" # OnStartApp or onFirstVisibleTask
-show_progress = true
-delay_startup = true # determines if installing waits fo the window to load before installing
+show_progress = false
+delay_startup = false # determines if installing waits fo the window to load before installing
 
 [tool.oxt.requirements]
 # https://python-poetry.org/docs/dependency-specification/
@@ -71,7 +71,7 @@ es = "Permite incluir paquetes de python en LibreOffice que no están incluidos 
 
 [tool.poetry]
 name = "LO PY Path"
-version = "0.1.0"
+version = "1.0.0"
 description = "Allows for including python packages in LibreOffice that are not included by default."
 authors = [":Barry-Thomas-Paul: Moss <bigbytetech@gmail.com>"]
 license = "MIT"

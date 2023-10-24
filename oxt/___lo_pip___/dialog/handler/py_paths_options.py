@@ -8,9 +8,7 @@ import unohelper
 from com.sun.star.awt import XActionListener
 from com.sun.star.awt import XContainerWindowEventHandler
 from com.sun.star.awt import XItemListener
-from com.sun.star.ui.dialogs import (
-    TemplateDescription,
-)  # import FILESAVE_AUTOEXTENSION, FILEOPEN_SIMPLE  # type: ignore
+from com.sun.star.ui.dialogs import TemplateDescription
 
 from ...basic_config import BasicConfig
 from ...lo_util.resource_resolver import ResourceResolver
@@ -69,10 +67,6 @@ class ButtonListener(unohelper.Base, XActionListener):
         try:
             cmd = str(ev.ActionCommand)
             self._logger.debug(f"ButtonListener.actionPerformed cmd: {cmd}")
-            # if cmd == "ChooseEditor":
-            #     if ret := self.cast.choose_file():
-            #         path = uno.fileUrlToSystemPath(ret)
-            #         ev.Source.getContext().getControl("txtTest").setText(path)
             if cmd == "Add":
                 self.cast.action_add()
             elif cmd == "AddFile":
@@ -131,7 +125,16 @@ class OptionsDialogHandler(unohelper.Base, XContainerWindowEventHandler):
         if name != self._window_name:
             return
         data = self._get_list_data(window)
-        self._py_settings.py_paths = data
+        if self._py_settings.py_paths != data:
+            self._py_settings.py_paths = data
+            title = self._resource_resolver.resolve_string("msg09")
+            msg = self._resource_resolver.resolve_string("msg10")
+            _ = MessageDialog(
+                self.ctx,
+                window.getPeer(),
+                title=title,
+                message=msg,
+            ).execute()
 
     def _load_data(self, window: UnoControlDialog, ev_name: str):
         # sourcery skip: extract-method
