@@ -41,8 +41,8 @@ services:
         target: /workspace/lo_python_path_ext/.venv
     
     ports:
-      - 3020:3000
-      - 3021:3001
+      - 3050:3000
+      - 3051:3001
     restart: unless-stopped
 
 volumes:
