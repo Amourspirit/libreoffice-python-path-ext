@@ -589,6 +589,14 @@ g_ImplementationHelper.addImplementation(
     logger_options.OptionsDialogHandler, logger_options.IMPLEMENTATION_NAME, (logger_options.IMPLEMENTATION_NAME,)
 )
 
+from ___lo_pip___.dialog.handler import py_paths_options
+
+g_ImplementationHelper.addImplementation(
+    py_paths_options.OptionsDialogHandler,
+    py_paths_options.IMPLEMENTATION_NAME,
+    (py_paths_options.IMPLEMENTATION_NAME,),
+)
+
 # uncomment here and int options.xcu to use the example dialog
 # from ___lo_pip___.dialog.handler import example
 

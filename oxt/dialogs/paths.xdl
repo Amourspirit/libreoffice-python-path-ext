@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE dlg:window PUBLIC "-//OpenOffice.org//DTD OfficeDocument 1.0//EN" "dialog.dtd">
+<dlg:window xmlns:dlg="http://openoffice.org/2000/dialog" xmlns:script="http://openoffice.org/2000/script" dlg:style-id="0" dlg:id="paths" dlg:left="56" dlg:top="24" dlg:width="256" dlg:height="219" dlg:closeable="true" dlg:moveable="true" dlg:withtitlebar="false">
+ <dlg:styles>
+  <dlg:style dlg:style-id="0" dlg:font-name="DejaVu Sans Mono" dlg:font-height="9" dlg:font-stylename="Book" dlg:font-family="modern"/>
+ </dlg:styles>
+ <dlg:bulletinboard>
+  <dlg:text dlg:id="lblList" dlg:tab-index="0" dlg:left="8" dlg:top="8" dlg:width="243" dlg:height="12" dlg:value="dlg01"/>
+  <dlg:menulist dlg:id="lstPaths" dlg:tab-index="1" dlg:left="8" dlg:top="25" dlg:width="243" dlg:height="93"/>
+  <dlg:button dlg:id="cmdAdd" dlg:tab-index="2" dlg:left="8" dlg:top="128" dlg:width="57" dlg:height="14" dlg:help-text="dhp02" dlg:value="dlg02"/>
+  <dlg:button dlg:id="cmdRemove" dlg:tab-index="4" dlg:left="132" dlg:top="128" dlg:width="57" dlg:height="14" dlg:help-text="dhp03" dlg:value="dlg03"/>
+  <dlg:button dlg:id="cmdVerify" dlg:tab-index="5" dlg:left="193" dlg:top="128" dlg:width="57" dlg:height="14" dlg:help-text="dhp04" dlg:value="dlg04"/>
+  <dlg:text dlg:id="lblHelp" dlg:tab-index="6" dlg:left="8" dlg:top="152" dlg:width="243" dlg:height="61" dlg:value="dlg05" dlg:multiline="true"/>
+  <dlg:button dlg:id="cmdAddFile" dlg:tab-index="3" dlg:left="72" dlg:top="128" dlg:width="57" dlg:height="14" dlg:help-text="dhp09" dlg:value="dlg09"/>
+ </dlg:bulletinboard>
+</dlg:window>

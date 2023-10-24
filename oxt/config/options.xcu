@@ -36,7 +36,27 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
                     <value>0</value>
                 </prop>
             </node>
-            <!-- <node oor:name="___lo_identifier___.ex" oor:op="fuse">
+            <node oor:name="___lo_identifier___.py_paths" oor:op="fuse">
+                <prop oor:name="Id">
+                    <value>___lo_identifier___</value>
+                </prop>
+                <prop oor:name="Label">
+                    <value xml:lang="en-US">Python Paths</value>
+                </prop>
+                <prop oor:name="OptionsPage">
+                    <value>%origin%/../dialogs/paths.xdl</value>
+                </prop>
+                <prop oor:name="EventHandlerService">
+                    <value>___lo_implementation_name___.PyPathsOptionsPage</value>
+                </prop>
+                <prop oor:name="GroupId">
+                    <value></value>
+                </prop>
+                <prop oor:name="GroupIndex">
+                    <value>0</value>
+                </prop>
+            </node>
+                <!-- <node oor:name="___lo_identifier___.ex" oor:op="fuse">
                 <prop oor:name="Id">
                     <value>___lo_identifier___</value>
                 </prop>
