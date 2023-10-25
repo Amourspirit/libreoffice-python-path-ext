@@ -20,13 +20,13 @@ In this example the folder is `D:\Python\python38`
 pyenv local 3.8.10
 ```
 
-Next make a virtual environment in `D:\Python\python38`
+Make a virtual environment in `D:\Python\python38`
 
 ```powershell
 python -m venv venv
 ```
 
-Now activate the virtual environment
+Activate the virtual environment
 
 ```powershell
 .\venv\Scripts\Activate.ps1
@@ -37,7 +37,7 @@ Should see a prompt similar to:
 (venv) [D:\Python\python38\]
 ```
 
-Now you can pip install python package into the virtual environment.
+Pip install python package(s) into the virtual environment.
 
 ```powershell
 pip install ooo-dev-tools
