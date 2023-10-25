@@ -6,6 +6,8 @@
 
 Include extra python paths for LibreOffice python scripts.
 
+On LibreOffice Extensions this extension can be found [here](https://extensions.libreoffice.org/en/extensions/show/41996), locally the extension can is found in the [dist](./dist) folder.
+
 After installing extension and restarting LibreOffice, the extension will be available in the `Tools -> Extension Manager...` dialog.
 
 ## Windows Example Tutorial
