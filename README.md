@@ -71,3 +71,25 @@ Click `OK` and restart LibreOffice and the path will be added to LibreOffice whe
 Using the [APSO](https://extensions.libreoffice.org/en/extensions/show/apso-alternative-script-organizer-for-python) console the import can be tested.
 
 ![2023-10-25_0-46-33](https://github.com/Amourspirit/libreoffice-python-path-ext/assets/4193389/a61282c0-7197-4b78-a8b4-b0b4810b1b3f)
+
+## Dev Container
+
+This project is generated from [Python LibreOffice Pip Extension Template](https://github.com/Amourspirit/python-libreoffice-pip) which in turn was generated from the [Live LibreOffice Python Template] This means this project can be run/developed in a Development container or Codespace with full access to LibreOffice.
+
+### Accessing LibreOffice
+
+The ports to access LibreOffice are `3050` for http and `3051` for https.
+
+See also: [How do I access the LibreOffice in a GitHub Codespace?](https://github.com/Amourspirit/live-libreoffice-python/wiki/FAQ#how-do-i-access-the-libreoffice-in-a-github-codespace) on [Live LibreOffice Python Template].
+
+## Installing Extension
+
+From LibreOffice open the extension manager, `Tools -> Extension Manager ...` and add `PyPath.oxt`
+
+When prompted choose `Only for me`. Restart LibreOffice and extension will install.
+
+![Add Extension Dialog](https://github.com/Amourspirit/libreoffice-python-path-ext/assets/4193389/1755df5c-b5f9-461c-bcd8-d0e1e7772da5)
+
+![For whom do you want to install the extension dialog box](https://github.com/Amourspirit/python-libreoffice-numpy-ext/assets/4193389/ee0369a2-f2f9-45d9-b093-66a138078f2a)
+
+[Live LibreOffice Python Template]:https://github.com/Amourspirit/live-libreoffice-python
