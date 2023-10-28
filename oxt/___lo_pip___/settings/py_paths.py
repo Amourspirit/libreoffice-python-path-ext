@@ -3,7 +3,7 @@ from typing import cast, Tuple, Set
 
 from .settings import Settings
 from ..meta.singleton import Singleton
-from ..lo_util.configuration import Configuration
+from ..lo_util.configuration import Configuration, SettingsT
 
 
 class PyPathsSettings(metaclass=Singleton):
@@ -13,6 +13,7 @@ class PyPathsSettings(metaclass=Singleton):
         settings = Settings()
         self._configuration = Configuration()
         self._py_paths = set(cast(Tuple, settings.current_settings.get("PyPathsList", ())))
+        self._py_path_verify = bool(settings.current_settings.get("PyPathVerify", True))
         self._node_value = f"/{settings.lo_implementation_name}.Settings/PyPaths"
 
     def append(self, pth: str) -> None:
@@ -36,3 +37,16 @@ class PyPathsSettings(metaclass=Singleton):
             node_value=self._node_value, name="PyPathsList", value=tuple(value)
         )
         self._py_paths = value
+    
+    @property
+    def py_path_verify(self) -> bool:
+        """Gets/Sets the python path verification."""
+        return self._py_path_verify
+    
+    @py_path_verify.setter
+    def py_path_verify(self, value: bool) -> None:
+        settings: SettingsT = {"names": ("PyPathVerify",), "values": (value,)}
+        self._configuration.save_configuration(
+            node_value=self._node_value, settings=settings
+        )
+        self._py_path_verify = value

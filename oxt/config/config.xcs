@@ -18,6 +18,13 @@
                     <desc>Paths to include in the python sys.path</desc>
                 </info>
             </prop>
+            <prop oor:name="PyPathVerify" oor:type="xs:boolean">
+                <info>
+                    <desc>
+                        Determins if the paths in PyPathsList are verified to exist before adding to sys.path.
+                    </desc>
+                </info>
+            </prop>
         </group>
         <group oor:name="Logging">
             <prop oor:name="LogFile" oor:type="xs:string">
