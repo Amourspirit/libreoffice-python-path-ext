@@ -94,4 +94,33 @@ When prompted choose `Only for me`. Restart LibreOffice and extension will insta
 
 ![For whom do you want to install the extension dialog box](https://github.com/Amourspirit/python-libreoffice-numpy-ext/assets/4193389/ee0369a2-f2f9-45d9-b093-66a138078f2a)
 
+## Linking CPython files
+
+This only apply to Mac OS and AppImage on Linux. On other versions of LibreOffice the `Create Links` button is not visible.
+
+Mac Os and Linux AppImage installs of LibreOffice have an embedded version of python.
+
+If the folder you are linking has no cpython files then this option is not needed.
+
+The embedded version of Python can only import from binary files that are compiled for the embedded version of Python. However when pip installs packages that contain binary `.so` file it's name might be named something like `bit_generator.cpython-38-x86_64-linux-gnu.so`. The issue is that the embedded python cannot import from this version of the binary file. For LibreOffice embedded python `3.8.10` the file would need to be named `bit_generator.cpython-3.8.so`. This is the reason that `numpy` cannot be imported when installed via pip into Mac OS and Linux AppImage versions of LibreOffice.
+
+The work around for this is to create symbolic links to each cpython binary in the selected folder and its subfolders. This extension will create the symbolic links for you. For example `bit_generator.cpython-3.8.so` would be a symbolic link that points to `bit_generator.cpython-38-x86_64-linux-gnu.so` and now LibreOffice python is able to import it.
+
+With a folder selected in the `Python Paths` dialog, click on `Create Links` and the extension will prompt you to create symbolic links in the selected folder and its subfolders.
+
+For example before linking with numpy installed an the virtual environment.
+When trying to import numpy the following error is displayed.
+
+```
+No module named 'numpy.core._multiarray_umath' (or 'numpy.core._multiarray_umath.add_docstring' is unknown)
+ (or '.core' is unknown)
+```
+
+After creating the links this issue is resolved.
+
+See also: [Python bug 36716](https://bugs.python.org/issue36716)
+
+![Link_cpython](https://github.com/Amourspirit/libreoffice-python-path-ext/assets/4193389/65a89551-de97-45b3-a010-fdce04e4131b)
+
+
 [Live LibreOffice Python Template]:https://github.com/Amourspirit/live-libreoffice-python

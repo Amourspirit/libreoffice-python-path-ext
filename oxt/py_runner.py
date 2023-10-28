@@ -127,6 +127,7 @@ class ___lo_implementation_name___(unohelper.Base, XJob):
             except Exception as err:
                 self._logger.error(err, exc_info=True)
         self._requirements_check = RequirementsCheck()
+        self._add_site_package_dir_to_sys_path()
 
     # endregion Init
 
@@ -149,7 +150,6 @@ class ___lo_implementation_name___(unohelper.Base, XJob):
             self._add_py_pkgs_to_sys_path()
             self._add_py_req_pkgs_to_sys_path()
             self._add_pure_pkgs_to_sys_path()
-            self._add_site_package_dir_to_sys_path()
             self._add_py_paths_to_sys_path()
             if self._config.log_level < 20:  # Less than INFO
                 self._show_extra_debug_info()
@@ -344,10 +344,14 @@ class ___lo_implementation_name___(unohelper.Base, XJob):
         self._log_sys_path_register_result(self._config.site_packages, result)
 
     def _add_py_paths_to_sys_path(self) -> None:
-        py_paths = PyPathsSettings().py_paths
+        path_settings = PyPathsSettings()
+        py_paths = path_settings.py_paths
         if not py_paths:
             self._logger.debug("No python paths to add to sys.path")
         for pth in py_paths:
+            if path_settings.py_path_verify and not Path(pth).exists():
+                self._logger.debug(f"Unable to register path. Path does not exist: {pth}")
+                continue
             result = self._session.register_path(pth, True)
             self._log_sys_path_register_result(pth, result)
 

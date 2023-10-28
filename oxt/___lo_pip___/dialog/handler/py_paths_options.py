@@ -8,30 +8,61 @@ import unohelper
 from com.sun.star.awt import XActionListener
 from com.sun.star.awt import XContainerWindowEventHandler
 from com.sun.star.awt import XItemListener
+from com.sun.star.beans import PropertyChangeEvent  # struct
+from com.sun.star.beans import XPropertyChangeListener
 from com.sun.star.ui.dialogs import TemplateDescription
+from com.sun.star.awt.MessageBoxType import INFOBOX, ERRORBOX, QUERYBOX
+from com.sun.star.awt import MessageBoxButtons
+from com.sun.star.awt import MessageBoxResults
+
 
 from ...basic_config import BasicConfig
-from ...lo_util.resource_resolver import ResourceResolver
+from ...config import Config
 from ...lo_util.configuration import Configuration, SettingsT
+from ...lo_util.link_cpython import LinkCPython
+from ...lo_util.resource_resolver import ResourceResolver
+from ...oxt_logger import OxtLogger
+from ...settings.py_paths import PyPathsSettings
 from ...settings.settings import Settings
 from ..file_open_dialog import FileOpenDialog
 from ..folder_open_dialog import FolderOpenDialog
-from ...oxt_logger import OxtLogger
-from ...settings.py_paths import PyPathsSettings
 from ..message_dialog import MessageDialog
-from com.sun.star.awt.MessageBoxType import INFOBOX, ERRORBOX
 
 if TYPE_CHECKING:
-    from com.sun.star.awt import UnoControlDialog  # service
+    from com.sun.star.awt import ItemEvent  # struct
     from com.sun.star.awt import UnoControlButton  # service
     from com.sun.star.awt import UnoControlButtonModel  # service
+    from com.sun.star.awt import UnoControlCheckBoxModel
+    from com.sun.star.awt import UnoControlDialog  # service
     from com.sun.star.awt import UnoControlListBox  # service
     from com.sun.star.awt import UnoControlListBoxModel  # service
-    from com.sun.star.awt import ItemEvent  # struct
 
 
 IMPLEMENTATION_NAME = f"{BasicConfig().lo_implementation_name}.PyPathsOptionsPage"
 
+
+class CheckBoxListener(unohelper.Base, XPropertyChangeListener):
+    def __init__(self, handler: "OptionsDialogHandler"):
+        self._logger = OxtLogger(log_name=__name__)
+        self._logger.debug("CheckBoxListener.__init__")
+        self.handler = handler
+        self._logger.debug("CheckBoxListener.__init__ done")
+
+    def disposing(self, ev: Any):
+        pass
+
+    def propertyChange(self, ev: PropertyChangeEvent):
+        self._logger.debug("CheckBoxListener.propertyChange")
+        try:
+            # state (evn.NewValue) will be 1 for true and 0 for false
+            src = cast("UnoControlCheckBoxModel", ev.Source)
+            if src.Name == "chkVerify":
+                self._logger.debug("CheckBoxListener.propertyChange: chkVerify")
+                self.handler.path_verify = self.handler.state_to_bool(cast(int, (ev.NewValue)))
+                self._logger.debug(f"CheckBoxListener.propertyChange: chkVerify: {self.handler.path_verify}")
+        except Exception as err:
+            self._logger.error(f"CheckBoxListener.propertyChange: {err}", exc_info=True)
+            raise
 
 class ItemListener(unohelper.Base, XItemListener):
     """
@@ -75,6 +106,8 @@ class ButtonListener(unohelper.Base, XActionListener):
                 self.cast.action_remove()
             elif cmd == "Verify":
                 self.cast.action_verify()
+            elif cmd == "Link":
+                self.cast.action_link()
         except Exception as err:
             self._logger.error(f"ButtonListener.actionPerformed: {err}", exc_info=True)
             raise err
@@ -85,13 +118,16 @@ class OptionsDialogHandler(unohelper.Base, XContainerWindowEventHandler):
         self._logger = OxtLogger(log_name=__name__)
         self._logger.debug("PyPaths-OptionsDialogHandler.__init__")
         self.ctx = ctx
-        self._config = BasicConfig()
+        self._config = Config()
         self._resource_resolver = ResourceResolver(self.ctx)
-        self._config_node = f"/{self._config.lo_implementation_name}.Settings/Logging"
+        self._config_node = f"/{self._config.lo_implementation_name}.Settings/PyPaths"
         self._window_name = "paths"
         self._window: UnoControlDialog | None = None
         self._settings = Settings()
         self._py_settings = PyPathsSettings()
+        self._path_verify  = True
+        self._path_verify_orig  = True
+        self._btn_link_visible = self._config.is_mac or self._config.is_app_image
         self._logger.debug("PyPaths-OptionsDialogHandler.__init__ done")
 
     # region XContainerWindowEventHandler
@@ -125,8 +161,17 @@ class OptionsDialogHandler(unohelper.Base, XContainerWindowEventHandler):
         if name != self._window_name:
             return
         data = self._get_list_data(window)
-        if self._py_settings.py_paths != data:
-            self._py_settings.py_paths = data
+        if self._py_settings.py_paths != data or self._path_verify_orig != self._path_verify:
+            if self._py_settings.py_paths != data:
+                self._logger.debug("PyPaths-OptionsDialogHandler._save_data: data changed")
+                self._py_settings.py_paths = data
+            else:
+                self._logger.debug("PyPaths-OptionsDialogHandler._save_data: data not changed")
+            if self._path_verify_orig != self._path_verify:
+                self._logger.debug(f"PyPaths-OptionsDialogHandler._save_data: path_verify changed: {self._path_verify}")
+                self._py_settings.py_path_verify = self._path_verify
+            else:
+                self._logger.debug("PyPaths-OptionsDialogHandler._save_data: path_verify not changed")
             title = self._resource_resolver.resolve_string("msg09")
             msg = self._resource_resolver.resolve_string("msg10")
             _ = MessageDialog(
@@ -146,31 +191,48 @@ class OptionsDialogHandler(unohelper.Base, XContainerWindowEventHandler):
         self._window = window
         try:
             if ev_name == "initialize":
-                listener = ButtonListener(self)
+                chk_listener = CheckBoxListener(self)
+                btn_listener = ButtonListener(self)
                 btn_add = self._get_ctl_add(window)
                 btn_add.setActionCommand("Add")
-                btn_add.addActionListener(listener)
+                btn_add.addActionListener(btn_listener)
 
                 btn_add_file = self._get_ctl_add_file(window)
                 btn_add_file.setActionCommand("AddFile")
-                btn_add_file.addActionListener(listener)
+                btn_add_file.addActionListener(btn_listener)
 
                 btn_remove = self._get_ctl_remove(window)
                 btn_remove.setActionCommand("Remove")
-                btn_remove.addActionListener(listener)
+                btn_remove.addActionListener(btn_listener)
                 btn_remove.setEnable(False)
 
                 btn_verify = self._get_ctl_verify(window)
                 btn_verify.setActionCommand("Verify")
-                btn_verify.addActionListener(listener)
+                btn_verify.addActionListener(btn_listener)
                 btn_verify.setEnable(False)
+                
+                if self._btn_link_visible:
+                    btn_link = self._get_ctl_link(window)
+                    btn_link.setActionCommand("Link")
+                    btn_link.addActionListener(btn_listener)
+                    btn_link.setEnable(False)
+                    
+                    btn_link_model = self._get_model_link(window)
+                    # btn_link_model.EnableVisible = True
+                    btn_link_model.setPropertyValue("EnableVisible", True)
+                
+                self._path_verify = self._py_settings.py_path_verify
+                self._path_verify_orig = self._path_verify
 
                 for control in window.Controls:  # type: ignore
                     if not control.supportsService("com.sun.star.awt.UnoControlListBox"):
                         model = control.Model
                         model.Label = self._resource_resolver.resolve_string(model.Label)
-                        if model.getServiceName() == "stardiv.vcl.controlmodel.Button":
+                        if model.getServiceName() == "stardiv.vcl.controlmodel.Button" and model.HelpText:
                             model.HelpText = self._resource_resolver.resolve_string(model.HelpText)
+                        if model.Name == "chkVerify":
+                            model.State = self.bool_to_state(self.path_verify)
+                            model.addPropertyChangeListener("State", chk_listener)
 
                 self._init_list_data(window)
 
@@ -189,6 +251,17 @@ class OptionsDialogHandler(unohelper.Base, XContainerWindowEventHandler):
 
         cmd_ctl_verify = self._get_ctl_verify(self.window)
         cmd_ctl_verify.setEnable(has_selection)
+        if self._btn_link_visible:
+            cmd_ctl_link = self._get_ctl_link(self.window)
+            if has_selection:
+                pth = Path(self._get_selected_item_text(self.window))
+                if pth.exists() and pth.is_dir():
+                    cmd_ctl_link.setEnable(True)
+                else:
+                    cmd_ctl_link.setEnable(False)
+            else:
+                cmd_ctl_link.setEnable(False)
+                
 
     # endregion update UI
 
@@ -299,6 +372,47 @@ class OptionsDialogHandler(unohelper.Base, XContainerWindowEventHandler):
                 title=self._resource_resolver.resolve_string("msg01"),
             )
             msg_box.execute()
+    
+    def action_link(self) -> None:
+        self._logger.debug("PyPaths-OptionsDialogHandler.action_verify")
+        if not self.window:
+            return
+        msg_box = MessageDialog(
+                ctx=self.ctx,
+                parent=self.window.getPeer(),
+                type=QUERYBOX,
+                message=self._resource_resolver.resolve_string("msg12"), # overwrite?
+                title=self._resource_resolver.resolve_string("msg11"),
+                buttons=MessageBoxButtons.BUTTONS_YES_NO_CANCEL,
+            )
+        result = msg_box.execute()
+        if result == MessageBoxResults.CANCEL:
+            return
+        overwrite= result == MessageBoxResults.YES
+        pth = self._get_selected_item_text(self.window)
+        self._logger.debug(f"PyPaths-OptionsDialogHandler.action_link: {pth}")
+        try:
+            link = LinkCPython(pth=pth, overwrite=overwrite)
+            link.link()
+            msg_box = MessageDialog(
+                ctx=self.ctx,
+                parent=self.window.getPeer(),
+                type=INFOBOX,
+                message=self._resource_resolver.resolve_string("msg14"),
+                title=self._resource_resolver.resolve_string("msg11"),
+            )
+            _ = msg_box.execute()
+        except Exception as err:
+            self._logger.error(f"PyPaths-OptionsDialogHandler.action_link: {err}", exc_info=True)
+            msg_box = MessageDialog(
+                ctx=self.ctx,
+                parent=self.window.getPeer(),
+                type=ERRORBOX,
+                message=self._resource_resolver.resolve_string("msg13"),
+                title=self._resource_resolver.resolve_string("msg11"),
+            )
+            _ = msg_box.execute()
+        
 
     # endregion Actions
 
@@ -314,6 +428,9 @@ class OptionsDialogHandler(unohelper.Base, XContainerWindowEventHandler):
 
     def _get_ctl_verify(self, window: UnoControlDialog) -> UnoControlButton:
         return cast("UnoControlButton", window.getControl("cmdVerify"))
+    
+    def _get_ctl_link(self, window: UnoControlDialog) -> UnoControlButton:
+        return cast("UnoControlButton", window.getControl("cmdLink"))
 
     def _get_ctl_lst_py_paths(self, window: UnoControlDialog) -> UnoControlListBox:
         return cast("UnoControlListBox", window.getControl("lstPaths"))
@@ -329,6 +446,9 @@ class OptionsDialogHandler(unohelper.Base, XContainerWindowEventHandler):
 
     def _get_model_verify(self, window: UnoControlDialog) -> UnoControlButtonModel:
         return cast("UnoControlButtonModel", self._get_ctl_verify(window).getModel())
+    
+    def _get_model_link(self, window: UnoControlDialog) -> UnoControlButtonModel:
+        return cast("UnoControlButtonModel", self._get_ctl_link(window).getModel())
 
     def _get_model_lst_py_paths(self, window: UnoControlDialog) -> UnoControlListBoxModel:
         return cast("UnoControlListBoxModel", self._get_ctl_lst_py_paths(window).getModel())
@@ -375,6 +495,12 @@ class OptionsDialogHandler(unohelper.Base, XContainerWindowEventHandler):
         """Gets folder url from folder picker dialog or empty string if canceled."""
         return FolderOpenDialog(self.ctx).execute()
 
+    def state_to_bool(self, state: int) -> bool:
+        return bool(state)
+
+    def bool_to_state(self, value: bool) -> int:
+        return int(value)
+
     # region Properties
     @property
     def py_settings(self) -> PyPathsSettings:
@@ -384,4 +510,12 @@ class OptionsDialogHandler(unohelper.Base, XContainerWindowEventHandler):
     def window(self) -> UnoControlDialog | None:
         return self._window
 
+
+    @property
+    def path_verify(self) -> bool:
+        return self._path_verify
+    
+    @path_verify.setter
+    def path_verify(self, value: bool) -> None:
+        self._path_verify = value
     # endregion Properties
