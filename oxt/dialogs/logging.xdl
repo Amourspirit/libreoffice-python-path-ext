@@ -2,7 +2,7 @@
 <!DOCTYPE dlg:window PUBLIC "-//OpenOffice.org//DTD OfficeDocument 1.0//EN" "dialog.dtd">
 <dlg:window xmlns:dlg="http://openoffice.org/2000/dialog"
     xmlns:script="http://openoffice.org/2000/script" dlg:id="logging" dlg:left="56" dlg:top="24"
-    dlg:width="195" dlg:height="178" dlg:closeable="true" dlg:moveable="true"
+    dlg:width="195" dlg:height="220" dlg:closeable="true" dlg:moveable="true"
     dlg:withtitlebar="false">
     <dlg:styles>
         <dlg:style dlg:style-id="0" dlg:font-name="DejaVu Sans Mono" dlg:font-height="9"

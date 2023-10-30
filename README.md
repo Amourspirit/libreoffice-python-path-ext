@@ -120,7 +120,7 @@ After creating the links this issue is resolved.
 
 See also: [Python bug 36716](https://bugs.python.org/issue36716)
 
-![Link_cpython](https://github.com/Amourspirit/libreoffice-python-path-ext/assets/4193389/65a89551-de97-45b3-a010-fdce04e4131b)
+![Link_cpython](https://github.com/Amourspirit/libreoffice-python-path-ext/assets/4193389/6370acb5-36ea-4be7-a488-14121e163c22)
 
 
 [Live LibreOffice Python Template]:https://github.com/Amourspirit/live-libreoffice-python
