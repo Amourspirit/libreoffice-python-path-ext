@@ -2,7 +2,7 @@
 <!DOCTYPE dlg:window PUBLIC "-//OpenOffice.org//DTD OfficeDocument 1.0//EN" "dialog.dtd">
 <dlg:window xmlns:dlg="http://openoffice.org/2000/dialog"
     xmlns:script="http://openoffice.org/2000/script" dlg:style-id="0" dlg:id="paths" dlg:left="56"
-    dlg:top="24" dlg:width="249" dlg:height="219" dlg:closeable="true" dlg:moveable="true"
+    dlg:top="24" dlg:width="249" dlg:height="220" dlg:closeable="true" dlg:moveable="true"
     dlg:withtitlebar="false">
     <dlg:styles>
         <dlg:style dlg:style-id="0" dlg:font-name="DejaVu Sans Mono" dlg:font-height="9"
@@ -17,15 +17,19 @@
             dlg:height="14" dlg:help-text="dhp02" dlg:value="dlg02" />
         <dlg:button dlg:id="cmdRemove" dlg:tab-index="4" dlg:left="125" dlg:top="119" dlg:width="57"
             dlg:height="14" dlg:help-text="dhp03" dlg:value="dlg03" />
-        <dlg:button dlg:id="cmdVerify" dlg:tab-index="5" dlg:left="184" dlg:top="119" dlg:width="57"
-            dlg:height="14" dlg:help-text="dhp04" dlg:value="dlg04" />
-        <dlg:text dlg:id="lblHelp" dlg:tab-index="7" dlg:left="8" dlg:top="161" dlg:width="235"
-            dlg:height="32" dlg:value="dlg05" dlg:multiline="true" />
         <dlg:button dlg:id="cmdAddFile" dlg:tab-index="3" dlg:left="67" dlg:top="119" dlg:width="57"
             dlg:height="14" dlg:help-text="dhp09" dlg:value="dlg09" />
-        <dlg:button dlg:id="cmdLink" dlg:tab-index="8" dlg:visible="false" dlg:left="8"
-            dlg:top="198" dlg:width="57" dlg:height="14" dlg:help-text="dhp10" dlg:value="dlg10" />
+        <dlg:button dlg:id="cmdVerify" dlg:tab-index="5" dlg:left="184" dlg:top="119" dlg:width="57"
+            dlg:height="14" dlg:help-text="dhp04" dlg:value="dlg04" />
+        <dlg:text dlg:id="lblHelp" dlg:tab-index="10" dlg:left="8" dlg:top="176" dlg:width="235"
+            dlg:height="32" dlg:value="dlg05" dlg:multiline="true" />
         <dlg:checkbox dlg:id="chkVerify" dlg:tab-index="6" dlg:left="7" dlg:top="141"
-            dlg:width="235" dlg:height="20" dlg:value="dlg11" dlg:checked="false" />
+            dlg:width="235" dlg:height="17" dlg:value="dlg11" dlg:checked="false" />
+        <dlg:button dlg:id="cmdImport" dlg:tab-index="7" dlg:left="8" dlg:top="160" dlg:width="57"
+            dlg:height="14" dlg:help-text="dhp12" dlg:value="dlg12" />
+        <dlg:button dlg:id="cmdExport" dlg:tab-index="8" dlg:left="67" dlg:top="160" dlg:width="57"
+            dlg:height="14" dlg:help-text="dhp13" dlg:value="dlg13" />
+        <dlg:button dlg:id="cmdLink" dlg:tab-index="9" dlg:visible="false" dlg:left="125"
+            dlg:top="160" dlg:width="57" dlg:height="14" dlg:help-text="dhp10" dlg:value="dlg10" />
     </dlg:bulletinboard>
 </dlg:window>

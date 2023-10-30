@@ -71,7 +71,7 @@ es = "Permite incluir paquetes de python en LibreOffice que no están incluidos 
 
 [tool.poetry]
 name = "LO PY Path"
-version = "1.1.0"
+version = "1.2.0"
 description = "Allows for including python packages in LibreOffice that are not included by default."
 authors = [":Barry-Thomas-Paul: Moss <bigbytetech@gmail.com>"]
 license = "MIT"

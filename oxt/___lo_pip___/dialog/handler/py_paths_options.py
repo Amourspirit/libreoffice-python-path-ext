@@ -1,5 +1,6 @@
 from __future__ import annotations
-from typing import Any, TYPE_CHECKING, cast, Callable, Set
+import contextlib
+from typing import Any, TYPE_CHECKING, cast, Callable, Set, Iterable
 from pathlib import Path
 
 import uno
@@ -64,6 +65,7 @@ class CheckBoxListener(unohelper.Base, XPropertyChangeListener):
             self._logger.error(f"CheckBoxListener.propertyChange: {err}", exc_info=True)
             raise
 
+
 class ItemListener(unohelper.Base, XItemListener):
     """
     Listener class that listens for UNO Item State
@@ -108,6 +110,10 @@ class ButtonListener(unohelper.Base, XActionListener):
                 self.cast.action_verify()
             elif cmd == "Link":
                 self.cast.action_link()
+            elif cmd == "Import":
+                self.cast.action_import()
+            elif cmd == "Export":
+                self.cast.action_export()
         except Exception as err:
             self._logger.error(f"ButtonListener.actionPerformed: {err}", exc_info=True)
             raise err
@@ -125,8 +131,8 @@ class OptionsDialogHandler(unohelper.Base, XContainerWindowEventHandler):
         self._window: UnoControlDialog | None = None
         self._settings = Settings()
         self._py_settings = PyPathsSettings()
-        self._path_verify  = True
-        self._path_verify_orig  = True
+        self._path_verify = True
+        self._path_verify_orig = True
         self._btn_link_visible = self._config.is_mac or self._config.is_app_image
         self._logger.debug("PyPaths-OptionsDialogHandler.__init__ done")
 
@@ -168,7 +174,9 @@ class OptionsDialogHandler(unohelper.Base, XContainerWindowEventHandler):
             else:
                 self._logger.debug("PyPaths-OptionsDialogHandler._save_data: data not changed")
             if self._path_verify_orig != self._path_verify:
-                self._logger.debug(f"PyPaths-OptionsDialogHandler._save_data: path_verify changed: {self._path_verify}")
+                self._logger.debug(
+                    f"PyPaths-OptionsDialogHandler._save_data: path_verify changed: {self._path_verify}"
+                )
                 self._py_settings.py_path_verify = self._path_verify
             else:
                 self._logger.debug("PyPaths-OptionsDialogHandler._save_data: path_verify not changed")
@@ -210,17 +218,27 @@ class OptionsDialogHandler(unohelper.Base, XContainerWindowEventHandler):
                 btn_verify.setActionCommand("Verify")
                 btn_verify.addActionListener(btn_listener)
                 btn_verify.setEnable(False)
-                
+
+                btn_import = self._get_ctl_import(window)
+                btn_import.setActionCommand("Import")
+                btn_import.addActionListener(btn_listener)
+                btn_import.setEnable(True)
+
+                btn_export = self._get_ctl_export(window)
+                btn_export.setActionCommand("Export")
+                btn_export.addActionListener(btn_listener)
+                btn_export.setEnable(False)
+
                 if self._btn_link_visible:
                     btn_link = self._get_ctl_link(window)
                     btn_link.setActionCommand("Link")
                     btn_link.addActionListener(btn_listener)
                     btn_link.setEnable(False)
-                    
+
                     btn_link_model = self._get_model_link(window)
                     # btn_link_model.EnableVisible = True
                     btn_link_model.setPropertyValue("EnableVisible", True)
-                
+
                 self._path_verify = self._py_settings.py_path_verify
                 self._path_verify_orig = self._path_verify
 
@@ -251,6 +269,10 @@ class OptionsDialogHandler(unohelper.Base, XContainerWindowEventHandler):
 
         cmd_ctl_verify = self._get_ctl_verify(self.window)
         cmd_ctl_verify.setEnable(has_selection)
+
+        cmd_ctl_export = self._get_ctl_export(self.window)
+        cmd_ctl_export.setEnable(self._has_list_data(self.window))
+
         if self._btn_link_visible:
             cmd_ctl_link = self._get_ctl_link(self.window)
             if has_selection:
@@ -261,7 +283,6 @@ class OptionsDialogHandler(unohelper.Base, XContainerWindowEventHandler):
                     cmd_ctl_link.setEnable(False)
             else:
                 cmd_ctl_link.setEnable(False)
-                
 
     # endregion update UI
 
@@ -271,11 +292,10 @@ class OptionsDialogHandler(unohelper.Base, XContainerWindowEventHandler):
         lb.addItemListener(ItemListener(self._lb_py_paths_item_changed))
         self._refresh_list_data(window)
 
-    def _refresh_list_data(self, window: UnoControlDialog):
+    def _refresh_list_data(self, window: UnoControlDialog, data: Iterable[str] | None = None):
         model = self._get_model_lst_py_paths(window)
         model.removeAllItems()
-        items = sorted(self._py_settings.py_paths)
-        # items = ["Test1", "Test2", "Test3"]
+        items = sorted(self._py_settings.py_paths) if data is None else sorted(data)
         for i, itm in enumerate(items):
             model.insertItemText(i, itm)
 
@@ -302,6 +322,10 @@ class OptionsDialogHandler(unohelper.Base, XContainerWindowEventHandler):
         lb = self._get_model_lst_py_paths(window)
         return set(lb.getItemText(i) for i in range(lb.ItemCount))
 
+    def _has_list_data(self, window: UnoControlDialog) -> bool:
+        lb = self._get_model_lst_py_paths(window)
+        return lb.ItemCount > 0
+
     def _get_selected_item_text(self, window: UnoControlDialog) -> str:
         lb = self._get_model_lst_py_paths(window)
         if not lb.SelectedItems:
@@ -319,6 +343,8 @@ class OptionsDialogHandler(unohelper.Base, XContainerWindowEventHandler):
             path = uno.fileUrlToSystemPath(ret)
             self._logger.debug(f"PyPaths-OptionsDialogHandler.action_add path: {path}")
             self._append_list_data(self.window, path)
+            lb = self._get_model_lst_py_paths(self.window)
+            self._update_ui(bool(lb.SelectedItems))
 
     def action_add_file(self) -> None:
         if not self.window:
@@ -328,6 +354,8 @@ class OptionsDialogHandler(unohelper.Base, XContainerWindowEventHandler):
             path = uno.fileUrlToSystemPath(ret)
             self._logger.debug(f"PyPaths-OptionsDialogHandler.action_add_file path: {path}")
             self._append_list_data(self.window, path)
+            lb = self._get_model_lst_py_paths(self.window)
+            self._update_ui(bool(lb.SelectedItems))
 
     def action_remove(self) -> None:
         if not self.window:
@@ -372,23 +400,23 @@ class OptionsDialogHandler(unohelper.Base, XContainerWindowEventHandler):
                 title=self._resource_resolver.resolve_string("msg01"),
             )
             msg_box.execute()
-    
+
     def action_link(self) -> None:
         self._logger.debug("PyPaths-OptionsDialogHandler.action_verify")
         if not self.window:
             return
         msg_box = MessageDialog(
-                ctx=self.ctx,
-                parent=self.window.getPeer(),
-                type=QUERYBOX,
-                message=self._resource_resolver.resolve_string("msg12"), # overwrite?
-                title=self._resource_resolver.resolve_string("msg11"),
-                buttons=MessageBoxButtons.BUTTONS_YES_NO_CANCEL,
-            )
+            ctx=self.ctx,
+            parent=self.window.getPeer(),
+            type=QUERYBOX,
+            message=self._resource_resolver.resolve_string("msg12"),  # overwrite?
+            title=self._resource_resolver.resolve_string("msg11"),
+            buttons=MessageBoxButtons.BUTTONS_YES_NO_CANCEL,
+        )
         result = msg_box.execute()
         if result == MessageBoxResults.CANCEL:
             return
-        overwrite= result == MessageBoxResults.YES
+        overwrite = result == MessageBoxResults.YES
         pth = self._get_selected_item_text(self.window)
         self._logger.debug(f"PyPaths-OptionsDialogHandler.action_link: {pth}")
         try:
@@ -412,7 +440,89 @@ class OptionsDialogHandler(unohelper.Base, XContainerWindowEventHandler):
                 title=self._resource_resolver.resolve_string("msg11"),
             )
             _ = msg_box.execute()
-        
+
+    # region Import Export
+    def action_import(self) -> None:
+        self._logger.debug("PyPaths-OptionsDialogHandler.cmd_import")
+        if not self.window:
+            return
+        try:
+            if ret := self.choose_file(file_type="txt"):
+                path = uno.fileUrlToSystemPath(ret)
+                self._logger.debug(f"PyPaths-OptionsDialogHandler.cmd_import path: {path}")
+                pth = Path(path)
+                if not pth.exists():
+                    msg_box = MessageDialog(
+                        ctx=self.ctx,
+                        parent=self.window.getPeer(),
+                        type=ERRORBOX,
+                        message=self._resource_resolver.resolve_string("msg15"),
+                        title=self._resource_resolver.resolve_string("msg01"),
+                    )
+                    _ = msg_box.execute()
+                    return
+                data: Set[str] = set()
+                try:
+                    with open(pth, "r") as f:
+                        for line in f:
+                            if line_data := line.strip():
+                                data.add(line_data)
+                except UnicodeDecodeError as err:
+                    msg_box = MessageDialog(
+                        ctx=self.ctx,
+                        parent=self.window.getPeer(),
+                        type=ERRORBOX,
+                        message=self._resource_resolver.resolve_string("msg16"),
+                        title=self._resource_resolver.resolve_string("msg01"),
+                    )
+                    _ = msg_box.execute()
+                    return
+                self._refresh_list_data(self.window, data)
+                self._update_ui(False)
+        except Exception as err:
+            self._logger.error(f"PyPaths-OptionsDialogHandler.cmd_import: {err}", exc_info=True)
+            msg_box = MessageDialog(
+                ctx=self.ctx,
+                parent=self.window.getPeer(),
+                type=ERRORBOX,
+                message=str(err),
+                title=self._resource_resolver.resolve_string("msg01"),
+            )
+            _ = msg_box.execute()
+
+    def action_export(self) -> None:
+        self._logger.debug("PyPaths-OptionsDialogHandler.cmd_export")
+        if not self.window:
+            return
+        try:
+            data = self._get_list_data(self.window)
+            if not data:
+                msg_box = MessageDialog(
+                    ctx=self.ctx,
+                    parent=self.window.getPeer(),
+                    type=ERRORBOX,
+                    message=self._resource_resolver.resolve_string("msg17"),
+                    title=self._resource_resolver.resolve_string("msg01"),
+                )
+                _ = msg_box.execute()
+                return
+            if ret := self.choose_file(file_type="txt", template=TemplateDescription.FILESAVE_AUTOEXTENSION):
+                path = uno.fileUrlToSystemPath(ret)
+                with open(path, "w") as f:
+                    for line in data:
+                        f.write(f"{line}\n")
+        except Exception as err:
+            self._logger.error(f"PyPaths-OptionsDialogHandler.cmd_export: {err}", exc_info=True)
+            msg_box = MessageDialog(
+                ctx=self.ctx,
+                parent=self.window.getPeer(),
+                type=ERRORBOX,
+                message=str(err),
+                title=self._resource_resolver.resolve_string("msg01"),
+            )
+            _ = msg_box.execute()
+
+    # endregion Import Export
 
     # endregion Actions
 
@@ -428,7 +538,13 @@ class OptionsDialogHandler(unohelper.Base, XContainerWindowEventHandler):
 
     def _get_ctl_verify(self, window: UnoControlDialog) -> UnoControlButton:
         return cast("UnoControlButton", window.getControl("cmdVerify"))
-    
+
+    def _get_ctl_import(self, window: UnoControlDialog) -> UnoControlButton:
+        return cast("UnoControlButton", window.getControl("cmdImport"))
+
+    def _get_ctl_export(self, window: UnoControlDialog) -> UnoControlButton:
+        return cast("UnoControlButton", window.getControl("cmdExport"))
+
     def _get_ctl_link(self, window: UnoControlDialog) -> UnoControlButton:
         return cast("UnoControlButton", window.getControl("cmdLink"))
 
@@ -446,7 +562,7 @@ class OptionsDialogHandler(unohelper.Base, XContainerWindowEventHandler):
 
     def _get_model_verify(self, window: UnoControlDialog) -> UnoControlButtonModel:
         return cast("UnoControlButtonModel", self._get_ctl_verify(window).getModel())
-    
+
     def _get_model_link(self, window: UnoControlDialog) -> UnoControlButtonModel:
         return cast("UnoControlButtonModel", self._get_ctl_link(window).getModel())
 
@@ -462,17 +578,28 @@ class OptionsDialogHandler(unohelper.Base, XContainerWindowEventHandler):
         except Exception as e:
             raise e
 
-    def choose_file(self):
-        """Gets file url from picker dialog or empty string if canceled."""
+    def choose_file(self, file_type: str = "zip", template: int = TemplateDescription.FILEOPEN_SIMPLE):
+        """
+        Gets file url from picker dialog or empty string if canceled.
+
+        Args:
+            file_type (str, optional): File type ( zip or txt ). Defaults to "zip".
+            template (int, optional): Dialog template. Defaults to TemplateDescription.FILEOPEN_SIMPLE.
+        """
         self._logger.debug("PyPaths-OptionsDialogHandler.choose_file")
         try:
-            return self._get_file_url()
+            if file_type == "zip":
+                return self._get_file_zip(template)
+            elif file_type == "txt":
+                return self._get_file_txt(template)
         except Exception as err:
             self._logger.error(f"PyPaths-OptionsDialogHandler.choose_file: {err}", exc_info=True)
             raise err
 
     def choose_folder(self):
-        """Gets folder url from folder picker dialog or empty string if canceled."""
+        """
+        Gets folder url from folder picker dialog or empty string if canceled.
+        """
         self._logger.debug("PyPaths-OptionsDialogHandler.choose_file")
         try:
             return self._get_folder_url()
@@ -480,12 +607,23 @@ class OptionsDialogHandler(unohelper.Base, XContainerWindowEventHandler):
             self._logger.error(f"PyPaths-OptionsDialogHandler.choose_file: {err}", exc_info=True)
             raise err
 
-    def _get_file_url(self):
+    def _get_file_zip(self, template: int):
         url = FileOpenDialog(
             self.ctx,
-            template=TemplateDescription.FILEOPEN_SIMPLE,
+            template=template,
             filters=(
                 (self._resource_resolver.resolve_string("ex05"), "*.zip"),
+                (self._resource_resolver.resolve_string("ex03"), "*.*"),
+            ),
+        ).execute()
+        return url or False
+
+    def _get_file_txt(self, template: int):
+        url = FileOpenDialog(
+            self.ctx,
+            template=template,
+            filters=(
+                (self._resource_resolver.resolve_string("ex07"), "*.txt"),
                 (self._resource_resolver.resolve_string("ex03"), "*.*"),
             ),
         ).execute()
@@ -510,12 +648,12 @@ class OptionsDialogHandler(unohelper.Base, XContainerWindowEventHandler):
     def window(self) -> UnoControlDialog | None:
         return self._window
 
-
     @property
     def path_verify(self) -> bool:
         return self._path_verify
-    
+
     @path_verify.setter
     def path_verify(self, value: bool) -> None:
         self._path_verify = value
+
     # endregion Properties
