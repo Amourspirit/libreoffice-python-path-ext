@@ -489,7 +489,7 @@ class OptionsDialogHandler(unohelper.Base, XContainerWindowEventHandler):
                             parent=self.window.getPeer(),
                             type=QUERYBOX,
                             message=self._resource_resolver.resolve_string("msg18"),
-                            title=self._resource_resolver.resolve_string("msg11"),
+                            title=self._resource_resolver.resolve_string("title03"),
                             buttons=MessageBoxButtons.BUTTONS_YES_NO_CANCEL,
                         )
                         result = msg_box.execute()
