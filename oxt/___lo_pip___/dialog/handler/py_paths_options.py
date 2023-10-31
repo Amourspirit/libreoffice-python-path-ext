@@ -477,8 +477,30 @@ class OptionsDialogHandler(unohelper.Base, XContainerWindowEventHandler):
                     )
                     _ = msg_box.execute()
                     return
+
+                current_data = self._get_list_data(self.window)
+                if current_data == data:
+                    self._logger.debug("PyPaths-OptionsDialogHandler.cmd_import: data not changed. Nothing to do.")
+                    return
+                else:
+                    if current_data:
+                        msg_box = MessageDialog(
+                            ctx=self.ctx,
+                            parent=self.window.getPeer(),
+                            type=QUERYBOX,
+                            message=self._resource_resolver.resolve_string("msg18"),
+                            title=self._resource_resolver.resolve_string("msg11"),
+                            buttons=MessageBoxButtons.BUTTONS_YES_NO_CANCEL,
+                        )
+                        result = msg_box.execute()
+                        if result == MessageBoxResults.CANCEL:
+                            return
+                        if result == MessageBoxResults.YES:
+                            data = data.union(current_data)
+
                 self._refresh_list_data(self.window, data)
-                self._update_ui(False)
+                lb = self._get_model_lst_py_paths(self.window)
+                self._update_ui(bool(lb.SelectedItems))
         except Exception as err:
             self._logger.error(f"PyPaths-OptionsDialogHandler.cmd_import: {err}", exc_info=True)
             msg_box = MessageDialog(
