@@ -17,7 +17,7 @@ from ..oxt_logger import OxtLogger
 
 
 class LinkCPython:
-    def __init__(self, pth: str, overwrite: bool = False) -> None:
+    def __init__(self, pth: str) -> None:
         """
         Constructor
 
@@ -25,17 +25,13 @@ class LinkCPython:
             pth (str): Path to site-packages folder.
             overwrite (bool, optional): Override any existing sys links. Defaults to False.
         """
-        self._overwrite = overwrite
         self._logger = OxtLogger(log_name=__name__)
         self._current_suffix = self._get_current_suffix()
         self._logger.debug("CPythonLink.__init__")
-        # self._suffix = self._get_current_suffix()
         self._config = Config()
         self._link_root = Path(pth)
-        self._file_suffix = ""
         if not self._link_root.exists():
             raise FileNotFoundError(f"Path does not exist {self._link_root}")
-        self._file_suffix = self._find_current_installed_suffix(self._link_root)
         self._logger.debug("CPythonLink.__init__ done")
 
     def _get_current_suffix(self) -> str:
@@ -47,22 +43,26 @@ class LinkCPython:
         return ""
 
     def _get_all_files(self, path: Path) -> List[Path]:
-        return [p for p in path.glob(f"**/*{self._file_suffix}.so") if p.is_file()]
+        return [p for p in path.glob(f"**/*{self.file_suffix}.so") if p.is_file()]
 
-    def _create_symlink(self, src: Path, dst: Path) -> None:
+    def _get_all_links(self, path: Path) -> List[Path]:
+        return [p for p in path.glob(f"**/*{self.current_suffix}.so") if p.is_symlink()]
+
+    def _create_symlink(self, src: Path, dst: Path, overwrite: bool) -> bool:
         log = self._config.log_level <= logging.DEBUG
         if dst.is_symlink():
-            if self._overwrite:
+            if overwrite:
                 if log:
                     self._logger.debug(f"Removing existing symlink {dst}")
                 dst.unlink()
             else:
                 if log:
                     self._logger.debug(f"Symlink already exists {dst}")
-                return
+                return False
         dst.symlink_to(src)
         if log:
             self._logger.debug(f"Created symlink {dst} -> {src}")
+        return True
 
     def _find_current_installed_suffix(self, path: Path) -> str:
         """
@@ -79,31 +79,38 @@ class LinkCPython:
             "",
         )
 
-    def link(self) -> None:
+    def link(self, overwrite: bool = False) -> int:
         """
         Creates symlinks for all .so files in site-packages that match the current suffix.
+
+        Args:
+            overwrite (bool, optional): Override any existing sys links. Defaults to False.
+
+        Returns:
+            int: Number of symlinks created.
         """
+        count = 0
         self._logger.debug("CPythonLink.link starting")
         if not self._link_root:
             self._logger.debug("No site-packages found")
-            return
-        if not self._file_suffix:
+            return count
+        if not self.file_suffix:
             self._logger.debug("No current file suffix found")
-            return
+            return count
         if not self._link_root.exists():
             self._logger.debug(f"Site-packages does not exist {self._link_root}")
-            return
+            return count
         self._logger.debug(f"Python current suffix: {self._current_suffix}")
-        self._logger.debug(f"Found file suffix: {self._file_suffix}")
+        self._logger.debug(f"Found file suffix: {self.file_suffix}")
         files = self._get_all_files(self._link_root)
         if not files:
             self._logger.debug(f"No files found in {self._link_root}")
-            return
-        cp_old = self._file_suffix
+            return count
+        cp_old = self.file_suffix
         cp_new = self._current_suffix
         if cp_old == cp_new:
             self._logger.debug(f"Suffixes match, no need to link: {cp_old} == {cp_new}")
-            return
+            return count
 
         for file in files:
             ln_name = file.name.replace(cp_old, cp_new)
@@ -111,8 +118,40 @@ class LinkCPython:
             if not src.is_absolute():
                 src = file.resolve()
             dst = src.parent / ln_name
-            self._create_symlink(src, dst)
-        self._logger.debug("CPythonLink.link done")
+            if self._create_symlink(src, dst, overwrite):
+                count += 1
+        self._logger.debug(f"Created {count} symlinks")
+        return count
+
+    def unlink(self, broken_only: bool = True) -> int:
+        """
+        Unlinks remove symbolic links.
+
+        Args:
+            broken_only (bool, optional): Specifies if only broken links are removed. Defaults to True.
+
+        Returns:
+            int: Number of links removed.
+        """
+        links = self._get_all_links(self._link_root)
+        count = 0
+        if not links:
+            self._logger.debug(f"No links found in {self._link_root}")
+            return count
+        for link in links:
+            if broken_only:
+                if not link.exists():
+                    self._logger.debug(f"Removing broken symlink {link}")
+                    link.unlink()
+                    count += 1
+            else:
+                link.unlink()
+                count += 1
+        if broken_only:
+            self._logger.debug(f"Removed {count} broken symlinks")
+        else:
+            self._logger.debug(f"Removed {count} symlinks")
+        return count
 
     # region Properties
     @property
@@ -141,6 +180,10 @@ class LinkCPython:
     @property
     def file_suffix(self) -> str:
         """Current Suffix such as ``cpython-38-x86_64-linux-gnu``"""
-        return self._file_suffix
+        try:
+            return self._file_suffix
+        except AttributeError:
+            self._file_suffix = self._find_current_installed_suffix(self._link_root)
+            return self._file_suffix
 
     # endregion Properties
