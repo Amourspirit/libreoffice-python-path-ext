@@ -110,6 +110,8 @@ class ButtonListener(unohelper.Base, XActionListener):
                 self.cast.action_verify()
             elif cmd == "Link":
                 self.cast.action_link()
+            elif cmd == "Unlink":
+                self.cast.action_unlink()
             elif cmd == "Import":
                 self.cast.action_import()
             elif cmd == "Export":
@@ -239,13 +241,28 @@ class OptionsDialogHandler(unohelper.Base, XContainerWindowEventHandler):
                     # btn_link_model.EnableVisible = True
                     btn_link_model.setPropertyValue("EnableVisible", True)
 
+                    btn_unlink = self._get_ctl_unlink(window)
+                    btn_unlink.setActionCommand("Unlink")
+                    btn_unlink.addActionListener(btn_listener)
+                    btn_unlink.setEnable(False)
+
+                    btn_unlink_model = self._get_model_unlink(window)
+                    btn_unlink_model.setPropertyValue("EnableVisible", True)
+
                 self._path_verify = self._py_settings.py_path_verify
                 self._path_verify_orig = self._path_verify
+
+                ellipse = self._resource_resolver.resolve_string("ellipse")
+
+                el_buttons = {"cmdAdd", "cmdAddFile", "cmdImport", "cmdExport", "cmdLink", "cmdUnlink"}
 
                 for control in window.Controls:  # type: ignore
                     if not control.supportsService("com.sun.star.awt.UnoControlListBox"):
                         model = control.Model
-                        model.Label = self._resource_resolver.resolve_string(model.Label)
+                        if model.Name in el_buttons:
+                            model.Label = self._resource_resolver.resolve_string(model.Label) + ellipse
+                        else:
+                            model.Label = self._resource_resolver.resolve_string(model.Label)
                         if model.getServiceName() == "stardiv.vcl.controlmodel.Button" and model.HelpText:
                             model.HelpText = self._resource_resolver.resolve_string(model.HelpText)
                         if model.Name == "chkVerify":
@@ -253,6 +270,7 @@ class OptionsDialogHandler(unohelper.Base, XContainerWindowEventHandler):
                             model.addPropertyChangeListener("State", chk_listener)
 
                 self._init_list_data(window)
+                self._update_ui(False)
 
         except Exception as err:
             self._logger.error(f"PyPaths-OptionsDialogHandler._load_data: {err}", exc_info=True)
@@ -275,14 +293,18 @@ class OptionsDialogHandler(unohelper.Base, XContainerWindowEventHandler):
 
         if self._btn_link_visible:
             cmd_ctl_link = self._get_ctl_link(self.window)
+            cmd_ctl_unlink = self._get_ctl_unlink(self.window)
             if has_selection:
                 pth = Path(self._get_selected_item_text(self.window))
                 if pth.exists() and pth.is_dir():
                     cmd_ctl_link.setEnable(True)
+                    cmd_ctl_unlink.setEnable(True)
                 else:
                     cmd_ctl_link.setEnable(False)
+                    cmd_ctl_unlink.setEnable(False)
             else:
                 cmd_ctl_link.setEnable(False)
+                cmd_ctl_unlink.setEnable(False)
 
     # endregion update UI
 
@@ -402,7 +424,7 @@ class OptionsDialogHandler(unohelper.Base, XContainerWindowEventHandler):
             msg_box.execute()
 
     def action_link(self) -> None:
-        self._logger.debug("PyPaths-OptionsDialogHandler.action_verify")
+        self._logger.debug("PyPaths-OptionsDialogHandler.action_link")
         if not self.window:
             return
         msg_box = MessageDialog(
@@ -420,14 +442,54 @@ class OptionsDialogHandler(unohelper.Base, XContainerWindowEventHandler):
         pth = self._get_selected_item_text(self.window)
         self._logger.debug(f"PyPaths-OptionsDialogHandler.action_link: {pth}")
         try:
-            link = LinkCPython(pth=pth, overwrite=overwrite)
-            link.link()
+            link = LinkCPython(pth=pth)
+            result = link.link(overwrite=overwrite)
             msg_box = MessageDialog(
                 ctx=self.ctx,
                 parent=self.window.getPeer(),
                 type=INFOBOX,
-                message=self._resource_resolver.resolve_string("msg14"),
+                message=self._resource_resolver.resolve_string("msg21").format(result),
                 title=self._resource_resolver.resolve_string("msg11"),
+            )
+            _ = msg_box.execute()
+        except Exception as err:
+            self._logger.error(f"PyPaths-OptionsDialogHandler.action_link: {err}", exc_info=True)
+            msg_box = MessageDialog(
+                ctx=self.ctx,
+                parent=self.window.getPeer(),
+                type=ERRORBOX,
+                message=self._resource_resolver.resolve_string("msg13"),
+                title=self._resource_resolver.resolve_string("msg11"),
+            )
+            _ = msg_box.execute()
+
+    def action_unlink(self) -> None:
+        self._logger.debug("PyPaths-OptionsDialogHandler.action_unlink")
+        if not self.window:
+            return
+        msg_box = MessageDialog(
+            ctx=self.ctx,
+            parent=self.window.getPeer(),
+            type=QUERYBOX,
+            message=self._resource_resolver.resolve_string("msg23"),  # overwrite?
+            title=self._resource_resolver.resolve_string("msg22"),
+            buttons=MessageBoxButtons.BUTTONS_YES_NO_CANCEL,
+        )
+        result = msg_box.execute()
+        if result == MessageBoxResults.CANCEL:
+            return
+        broken_only = result == MessageBoxResults.YES
+        pth = self._get_selected_item_text(self.window)
+        self._logger.debug(f"PyPaths-OptionsDialogHandler.action_unlink: {pth}")
+        try:
+            link = LinkCPython(pth=pth)
+            result = link.unlink(broken_only)
+            msg_box = MessageDialog(
+                ctx=self.ctx,
+                parent=self.window.getPeer(),
+                type=INFOBOX,
+                message=self._resource_resolver.resolve_string("msg20").format(result),
+                title=self._resource_resolver.resolve_string("msg19"),
             )
             _ = msg_box.execute()
         except Exception as err:
@@ -570,6 +632,9 @@ class OptionsDialogHandler(unohelper.Base, XContainerWindowEventHandler):
     def _get_ctl_link(self, window: UnoControlDialog) -> UnoControlButton:
         return cast("UnoControlButton", window.getControl("cmdLink"))
 
+    def _get_ctl_unlink(self, window: UnoControlDialog) -> UnoControlButton:
+        return cast("UnoControlButton", window.getControl("cmdUnlink"))
+
     def _get_ctl_lst_py_paths(self, window: UnoControlDialog) -> UnoControlListBox:
         return cast("UnoControlListBox", window.getControl("lstPaths"))
 
@@ -587,6 +652,9 @@ class OptionsDialogHandler(unohelper.Base, XContainerWindowEventHandler):
 
     def _get_model_link(self, window: UnoControlDialog) -> UnoControlButtonModel:
         return cast("UnoControlButtonModel", self._get_ctl_link(window).getModel())
+
+    def _get_model_unlink(self, window: UnoControlDialog) -> UnoControlButtonModel:
+        return cast("UnoControlButtonModel", self._get_ctl_unlink(window).getModel())
 
     def _get_model_lst_py_paths(self, window: UnoControlDialog) -> UnoControlListBoxModel:
         return cast("UnoControlListBoxModel", self._get_ctl_lst_py_paths(window).getModel())

@@ -96,7 +96,7 @@ When prompted choose `Only for me`. Restart LibreOffice and extension will insta
 
 ## Linking CPython files
 
-This only apply to Mac OS and AppImage on Linux. On other versions of LibreOffice the `Create Links` button is not visible.
+This only apply to Mac OS and AppImage on Linux. On other versions of LibreOffice the `Create Links...` and `Unlink..` buttons are not visible.
 
 Mac Os and Linux AppImage installs of LibreOffice have an embedded version of python.
 
@@ -106,7 +106,7 @@ The embedded version of Python can only import from binary files that are compil
 
 The work around for this is to create symbolic links to each cpython binary in the selected folder and its subfolders. This extension will create the symbolic links for you. For example `bit_generator.cpython-3.8.so` would be a symbolic link that points to `bit_generator.cpython-38-x86_64-linux-gnu.so` and now LibreOffice python is able to import it.
 
-With a folder selected in the `Python Paths` dialog, click on `Create Links` and the extension will prompt you to create symbolic links in the selected folder and its subfolders.
+With a folder selected in the `Python Paths` dialog, click on `Create Links...` and the extension will prompt you to create symbolic links in the selected folder and its subfolders.
 
 For example before linking with numpy installed an the virtual environment.
 When trying to import numpy the following error is displayed.
@@ -118,9 +118,12 @@ No module named 'numpy.core._multiarray_umath' (or 'numpy.core._multiarray_umath
 
 After creating the links this issue is resolved.
 
+To remove symbolic links use the `Unlink..` button. It will prompt you to remove the symbolic links in the selected folder and its subfolders.
+
 See also: [Python bug 36716](https://bugs.python.org/issue36716)
 
-![Link_cpython](https://github.com/Amourspirit/libreoffice-python-path-ext/assets/4193389/6370acb5-36ea-4be7-a488-14121e163c22)
+
+![cpython options image](https://github.com/Amourspirit/libreoffice-python-path-ext/assets/4193389/c17f22c3-9416-4656-95ea-7e7da4fee928)
 
 
 [Live LibreOffice Python Template]:https://github.com/Amourspirit/live-libreoffice-python
