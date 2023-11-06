@@ -2,7 +2,7 @@
 <!DOCTYPE dlg:window PUBLIC "-//OpenOffice.org//DTD OfficeDocument 1.0//EN" "dialog.dtd">
 <dlg:window xmlns:dlg="http://openoffice.org/2000/dialog"
     xmlns:script="http://openoffice.org/2000/script" dlg:style-id="0" dlg:id="paths" dlg:left="56"
-    dlg:top="24" dlg:width="249" dlg:height="220" dlg:closeable="true" dlg:moveable="true"
+    dlg:top="24" dlg:width="258" dlg:height="220" dlg:closeable="true" dlg:moveable="true"
     dlg:withtitlebar="false">
     <dlg:styles>
         <dlg:style dlg:style-id="0" dlg:font-name="DejaVu Sans Mono" dlg:font-height="9"
@@ -33,5 +33,9 @@
             dlg:top="160" dlg:width="57" dlg:height="14" dlg:help-text="dhp10" dlg:value="dlg10" />
         <dlg:button dlg:id="cmdUnlink" dlg:tab-index="10" dlg:visible="false" dlg:left="184"
             dlg:top="160" dlg:width="57" dlg:height="14" dlg:help-text="dhp14" dlg:value="dlg14" />
+        <dlg:button dlg:id="cmdMoveUp" dlg:tab-index="12" dlg:left="248" dlg:top="25" dlg:width="10"
+            dlg:height="12" dlg:help-text="dhpUp" dlg:value="⏶" />
+        <dlg:button dlg:id="cmdMoveDown" dlg:tab-index="13" dlg:left="248" dlg:top="44"
+            dlg:width="10" dlg:height="12" dlg:help-text="dhpDn" dlg:value="⏷" />
     </dlg:bulletinboard>
 </dlg:window>

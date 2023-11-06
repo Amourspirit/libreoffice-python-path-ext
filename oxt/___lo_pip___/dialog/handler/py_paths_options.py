@@ -1,6 +1,6 @@
 from __future__ import annotations
 import contextlib
-from typing import Any, TYPE_CHECKING, cast, Callable, Set, Iterable
+from typing import Any, TYPE_CHECKING, Literal, cast, Callable, Set, Sequence
 from pathlib import Path
 
 import uno
@@ -23,11 +23,12 @@ from ...lo_util.configuration import Configuration, SettingsT
 from ...lo_util.link_cpython import LinkCPython
 from ...lo_util.resource_resolver import ResourceResolver
 from ...oxt_logger import OxtLogger
-from ...settings.py_paths import PyPathsSettings
+from ...settings.py_paths_settings import PyPathsSettings
 from ...settings.settings import Settings
 from ..file_open_dialog import FileOpenDialog
 from ..folder_open_dialog import FolderOpenDialog
 from ..message_dialog import MessageDialog
+from ...py_paths import PathItems, PathItem
 
 if TYPE_CHECKING:
     from com.sun.star.awt import ItemEvent  # struct
@@ -116,6 +117,10 @@ class ButtonListener(unohelper.Base, XActionListener):
                 self.cast.action_import()
             elif cmd == "Export":
                 self.cast.action_export()
+            elif cmd == "MoveUp":
+                self.cast.action_move("up")
+            elif cmd == "MoveDown":
+                self.cast.action_move("dn")
         except Exception as err:
             self._logger.error(f"ButtonListener.actionPerformed: {err}", exc_info=True)
             raise err
@@ -231,6 +236,16 @@ class OptionsDialogHandler(unohelper.Base, XContainerWindowEventHandler):
                 btn_export.addActionListener(btn_listener)
                 btn_export.setEnable(False)
 
+                btn_up = self._get_ctl_move_up(window)
+                btn_up.setActionCommand("MoveUp")
+                btn_up.addActionListener(btn_listener)
+                btn_up.setEnable(False)
+
+                btn_down = self._get_ctl_move_down(window)
+                btn_down.setActionCommand("MoveDown")
+                btn_down.addActionListener(btn_listener)
+                btn_down.setEnable(False)
+
                 if self._btn_link_visible:
                     btn_link = self._get_ctl_link(window)
                     btn_link.setActionCommand("Link")
@@ -282,6 +297,8 @@ class OptionsDialogHandler(unohelper.Base, XContainerWindowEventHandler):
         if self.window is None:
             self._logger.debug("PyPaths-OptionsDialogHandler._update_ui: window is None")
             return
+        lb = self._get_model_lst_py_paths(self.window)
+        lst_count = lb.ItemCount
         cmd_clt_remove = self._get_ctl_remove(self.window)
         cmd_clt_remove.setEnable(has_selection)
 
@@ -289,13 +306,20 @@ class OptionsDialogHandler(unohelper.Base, XContainerWindowEventHandler):
         cmd_ctl_verify.setEnable(has_selection)
 
         cmd_ctl_export = self._get_ctl_export(self.window)
-        cmd_ctl_export.setEnable(self._has_list_data(self.window))
+        cmd_ctl_export.setEnable(lst_count > 0)
+
+        if has_selection:
+            sel_index = self._get_selected_item_index(self.window, lb)
+            cmd_ctl_up = self._get_ctl_move_up(self.window)
+            cmd_ctl_up.setEnable(lst_count > 1 and sel_index > 0)
+            cmd_ctl_dn = self._get_ctl_move_down(self.window)
+            cmd_ctl_dn.setEnable(lst_count > 1 and sel_index < lst_count - 1)
 
         if self._btn_link_visible:
             cmd_ctl_link = self._get_ctl_link(self.window)
             cmd_ctl_unlink = self._get_ctl_unlink(self.window)
             if has_selection:
-                pth = Path(self._get_selected_item_text(self.window))
+                pth = Path(self._get_selected_item_text(self.window, lb))
                 if pth.exists() and pth.is_dir():
                     cmd_ctl_link.setEnable(True)
                     cmd_ctl_unlink.setEnable(True)
@@ -314,12 +338,16 @@ class OptionsDialogHandler(unohelper.Base, XContainerWindowEventHandler):
         lb.addItemListener(ItemListener(self._lb_py_paths_item_changed))
         self._refresh_list_data(window)
 
-    def _refresh_list_data(self, window: UnoControlDialog, data: Iterable[str] | None = None):
-        model = self._get_model_lst_py_paths(window)
-        model.removeAllItems()
-        items = sorted(self._py_settings.py_paths) if data is None else sorted(data)
+    def _refresh_list_data(
+        self, window: UnoControlDialog, data: PathItems | None = None, lb: UnoControlListBoxModel | None = None
+    ):
+        if lb is None:
+            lb = self._get_model_lst_py_paths(window)
+        lb.removeAllItems()
+        items = self._py_settings.py_paths if data is None else data
+        items.sort()
         for i, itm in enumerate(items):
-            model.insertItemText(i, itm)
+            lb.insertItemText(i, itm.path)
 
     def _lb_py_paths_item_changed(self) -> None:
         self._logger.debug("PyPaths-OptionsDialogHandler._lb_py_paths_item_changed")
@@ -334,25 +362,44 @@ class OptionsDialogHandler(unohelper.Base, XContainerWindowEventHandler):
         self._logger.debug(f"PyPaths-OptionsDialogHandler._lb_py_paths_item_changed: {lb.SelectedItems}")
         self._update_ui(True)
 
-    def _append_list_data(self, window: UnoControlDialog, data: str) -> None:
+    def _append_list_data(self, window: UnoControlDialog, data: str, lb: UnoControlListBoxModel | None = None) -> None:
         self._logger.debug("PyPaths-OptionsDialogHandler._append_list_data")
-        lb = self._get_model_lst_py_paths(window)
+        if lb is None:
+            lb = self._get_model_lst_py_paths(window)
         index = lb.ItemCount
         lb.insertItemText(index, data)
 
-    def _get_list_data(self, window: UnoControlDialog) -> Set[str]:
-        lb = self._get_model_lst_py_paths(window)
-        return set(lb.getItemText(i) for i in range(lb.ItemCount))
+    def _get_list_data(self, window: UnoControlDialog, lb: UnoControlListBoxModel | None = None) -> PathItems:
+        if lb is None:
+            lb = self._get_model_lst_py_paths(window)
+        return PathItems([lb.getItemText(i) for i in range(lb.ItemCount)])
 
-    def _has_list_data(self, window: UnoControlDialog) -> bool:
-        lb = self._get_model_lst_py_paths(window)
-        return lb.ItemCount > 0
+    def _get_list_data_count(self, window: UnoControlDialog, lb: UnoControlListBoxModel | None = None) -> int:
+        if lb is None:
+            lb = self._get_model_lst_py_paths(window)
+        return lb.ItemCount
 
-    def _get_selected_item_text(self, window: UnoControlDialog) -> str:
-        lb = self._get_model_lst_py_paths(window)
-        if not lb.SelectedItems:
+    def _get_selected_item_text(self, window: UnoControlDialog, lb: UnoControlListBoxModel | None = None) -> str:
+        if lb is None:
+            lb = self._get_model_lst_py_paths(window)
+        index = self._get_selected_item_index(window, lb)
+        if index < 0:
             return ""
-        return lb.getItemText(cast(int, lb.SelectedItems[0]))
+        return lb.getItemText(index)
+
+    def _get_selected_item_index(self, window: UnoControlDialog, lb: UnoControlListBoxModel | None = None) -> int:
+        if lb is None:
+            lb = self._get_model_lst_py_paths(window)
+        if not lb.SelectedItems:
+            return -1
+        return cast(int, lb.SelectedItems[0])
+
+    def _set_selected_index(self, index: int, window: UnoControlDialog) -> None:
+        lb = self._get_ctl_lst_py_paths(window)
+        if index < 0:
+            lb.selectItemPos(0, False)
+        else:
+            lb.selectItemPos(index, True)
 
     # endregion Listbox
 
@@ -523,12 +570,12 @@ class OptionsDialogHandler(unohelper.Base, XContainerWindowEventHandler):
                     )
                     _ = msg_box.execute()
                     return
-                data: Set[str] = set()
+                data: PathItems = PathItems()
                 try:
                     with open(pth, "r") as f:
                         for line in f:
                             if line_data := line.strip():
-                                data.add(line_data)
+                                data.add_path(line_data)
                 except UnicodeDecodeError as err:
                     msg_box = MessageDialog(
                         ctx=self.ctx,
@@ -593,8 +640,8 @@ class OptionsDialogHandler(unohelper.Base, XContainerWindowEventHandler):
             if ret := self.choose_file(file_type="txt", template=TemplateDescription.FILESAVE_AUTOEXTENSION):
                 path = uno.fileUrlToSystemPath(ret)
                 with open(path, "w") as f:
-                    for line in data:
-                        f.write(f"{line}\n")
+                    for item in data:
+                        f.write(f"{item.path}\n")
         except Exception as err:
             self._logger.error(f"PyPaths-OptionsDialogHandler.cmd_export: {err}", exc_info=True)
             msg_box = MessageDialog(
@@ -607,6 +654,44 @@ class OptionsDialogHandler(unohelper.Base, XContainerWindowEventHandler):
             _ = msg_box.execute()
 
     # endregion Import Export
+
+    def action_move(self, direction: Literal["up", "dn"]) -> None:
+        self._logger.debug(f"PyPaths-OptionsDialogHandler.action_move: {direction}")
+        if not self.window:
+            return
+        path = self._get_selected_item_text(self.window)
+        if not path:
+            msg_box = MessageDialog(
+                ctx=self.ctx,
+                parent=self.window.getPeer(),
+                type=ERRORBOX,
+                message=self._resource_resolver.resolve_string("dlg08"),
+                title=self._resource_resolver.resolve_string("msg01"),
+            )
+            msg_box.execute()
+            return
+        selected_index = self._get_selected_item_index(self.window)
+        if selected_index < 0:
+            raise ValueError("PyPaths-OptionsDialogHandler.action_move: selected_index < 0")
+        data = self._get_list_data(self.window)
+        sel_item = data.find_path_item(path)
+        if not sel_item:
+            self._logger.debug("PyPaths-OptionsDialogHandler.action_move: item not found")
+            return
+        if direction == "up":
+            data.move_up(sel_item)
+        else:
+            data.move_down(sel_item)
+        self._refresh_list_data(self.window, data)
+        self._update_ui(selected_index > 0)
+        if direction == "up":
+            selected_index -= 1
+        else:
+            selected_index += 1
+        if selected_index > 0:
+            self._set_selected_index(selected_index, self.window)
+        else:
+            self._set_selected_index(0, self.window)
 
     # endregion Actions
 
@@ -638,6 +723,12 @@ class OptionsDialogHandler(unohelper.Base, XContainerWindowEventHandler):
     def _get_ctl_lst_py_paths(self, window: UnoControlDialog) -> UnoControlListBox:
         return cast("UnoControlListBox", window.getControl("lstPaths"))
 
+    def _get_ctl_move_up(self, window: UnoControlDialog) -> UnoControlButton:
+        return cast("UnoControlButton", window.getControl("cmdMoveUp"))
+
+    def _get_ctl_move_down(self, window: UnoControlDialog) -> UnoControlButton:
+        return cast("UnoControlButton", window.getControl("cmdMoveDown"))
+
     def _get_model_add(self, window: UnoControlDialog) -> UnoControlButtonModel:
         return cast("UnoControlButtonModel", self._get_ctl_add(window).getModel())
 
@@ -658,6 +749,12 @@ class OptionsDialogHandler(unohelper.Base, XContainerWindowEventHandler):
 
     def _get_model_lst_py_paths(self, window: UnoControlDialog) -> UnoControlListBoxModel:
         return cast("UnoControlListBoxModel", self._get_ctl_lst_py_paths(window).getModel())
+
+    def _get_model_move_up(self, window: UnoControlDialog) -> UnoControlButtonModel:
+        return cast("UnoControlButtonModel", self._get_ctl_move_up(window).getModel())
+
+    def _get_model_move_down(self, window: UnoControlDialog) -> UnoControlButtonModel:
+        return cast("UnoControlButtonModel", self._get_ctl_move_down(window).getModel())
 
     # endregion Get Controls
 

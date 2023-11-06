@@ -1,0 +1,5 @@
+/workspace/lo_python_path_ext/macro
+/space/lo_python_path_ext/.venv/lib/python3.11/site-packages
+/a
+/c
+/b
