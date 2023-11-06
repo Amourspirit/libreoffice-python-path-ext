@@ -1,6 +1,6 @@
 from __future__ import annotations
 import contextlib
-from typing import Any, TYPE_CHECKING, cast, Callable, Set, Iterable
+from typing import Any, TYPE_CHECKING, cast, Callable, Set, Sequence
 from pathlib import Path
 
 import uno
@@ -23,11 +23,12 @@ from ...lo_util.configuration import Configuration, SettingsT
 from ...lo_util.link_cpython import LinkCPython
 from ...lo_util.resource_resolver import ResourceResolver
 from ...oxt_logger import OxtLogger
-from ...settings.py_paths import PyPathsSettings
+from ...settings.py_paths_settings import PyPathsSettings
 from ...settings.settings import Settings
 from ..file_open_dialog import FileOpenDialog
 from ..folder_open_dialog import FolderOpenDialog
 from ..message_dialog import MessageDialog
+from ...py_paths import PathItems, PathItem
 
 if TYPE_CHECKING:
     from com.sun.star.awt import ItemEvent  # struct
@@ -314,12 +315,13 @@ class OptionsDialogHandler(unohelper.Base, XContainerWindowEventHandler):
         lb.addItemListener(ItemListener(self._lb_py_paths_item_changed))
         self._refresh_list_data(window)
 
-    def _refresh_list_data(self, window: UnoControlDialog, data: Iterable[str] | None = None):
+    def _refresh_list_data(self, window: UnoControlDialog, data: PathItems | None = None):
         model = self._get_model_lst_py_paths(window)
         model.removeAllItems()
-        items = sorted(self._py_settings.py_paths) if data is None else sorted(data)
+        items = self._py_settings.py_paths if data is None else data
+        items.sort()
         for i, itm in enumerate(items):
-            model.insertItemText(i, itm)
+            model.insertItemText(i, itm.path)
 
     def _lb_py_paths_item_changed(self) -> None:
         self._logger.debug("PyPaths-OptionsDialogHandler._lb_py_paths_item_changed")
@@ -340,9 +342,9 @@ class OptionsDialogHandler(unohelper.Base, XContainerWindowEventHandler):
         index = lb.ItemCount
         lb.insertItemText(index, data)
 
-    def _get_list_data(self, window: UnoControlDialog) -> Set[str]:
+    def _get_list_data(self, window: UnoControlDialog) -> PathItems:
         lb = self._get_model_lst_py_paths(window)
-        return set(lb.getItemText(i) for i in range(lb.ItemCount))
+        return PathItems([lb.getItemText(i) for i in range(lb.ItemCount)])
 
     def _has_list_data(self, window: UnoControlDialog) -> bool:
         lb = self._get_model_lst_py_paths(window)
@@ -523,12 +525,12 @@ class OptionsDialogHandler(unohelper.Base, XContainerWindowEventHandler):
                     )
                     _ = msg_box.execute()
                     return
-                data: Set[str] = set()
+                data: PathItems = PathItems()
                 try:
                     with open(pth, "r") as f:
                         for line in f:
                             if line_data := line.strip():
-                                data.add(line_data)
+                                data.add_path(line_data)
                 except UnicodeDecodeError as err:
                     msg_box = MessageDialog(
                         ctx=self.ctx,
@@ -593,8 +595,8 @@ class OptionsDialogHandler(unohelper.Base, XContainerWindowEventHandler):
             if ret := self.choose_file(file_type="txt", template=TemplateDescription.FILESAVE_AUTOEXTENSION):
                 path = uno.fileUrlToSystemPath(ret)
                 with open(path, "w") as f:
-                    for line in data:
-                        f.write(f"{line}\n")
+                    for item in data:
+                        f.write(f"{item.path}\n")
         except Exception as err:
             self._logger.error(f"PyPaths-OptionsDialogHandler.cmd_export: {err}", exc_info=True)
             msg_box = MessageDialog(

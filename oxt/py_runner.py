@@ -45,7 +45,7 @@ from ___lo_pip___.events.named_events.startup_events import StartupNamedEvent
 from ___lo_pip___.events.startup.startup_monitor import StartupMonitor
 from ___lo_pip___.install.install_pip import InstallPip
 from ___lo_pip___.lo_util.util import Util
-from ___lo_pip___.settings.py_paths import PyPathsSettings
+from ___lo_pip___.settings.py_paths_settings import PyPathsSettings
 
 # endregion imports
 
@@ -349,11 +349,11 @@ class ___lo_implementation_name___(unohelper.Base, XJob):
         if not py_paths:
             self._logger.debug("No python paths to add to sys.path")
         for pth in py_paths:
-            if path_settings.py_path_verify and not Path(pth).exists():
+            if path_settings.py_path_verify and not Path(pth.path).exists():
                 self._logger.debug(f"Unable to register path. Path does not exist: {pth}")
                 continue
-            result = self._session.register_path(pth, True)
-            self._log_sys_path_register_result(pth, result)
+            result = self._session.register_path(pth.path, True)
+            self._log_sys_path_register_result(pth.path, result)
 
     def _log_sys_path_register_result(self, pth: Path | str, result: RegisterPathKind) -> None:
         if not isinstance(pth, str):
