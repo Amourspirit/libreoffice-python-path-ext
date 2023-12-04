@@ -1,6 +1,6 @@
 from __future__ import annotations
 from pathlib import Path
-from typing import Dict, List, cast
+from typing import Dict, List, Set, cast
 import json
 
 
@@ -32,6 +32,9 @@ class BasicConfig(metaclass=ConfigMeta):
         self._default_locale = cast(List[str], (kwargs["default_locale"]))
         self._resource_dir_name = str(kwargs["resource_dir_name"])
         self._resource_properties_prefix = str(kwargs["resource_properties_prefix"])
+        self._isolate_windows = set(kwargs["isolate_windows"])
+        self._sym_link_cpython = bool(kwargs["sym_link_cpython"])
+        self._uninstall_on_update = bool(kwargs["uninstall_on_update"])
 
         if "requirements" not in kwargs:
             kwargs["requirements"] = {}
@@ -91,6 +94,15 @@ class BasicConfig(metaclass=ConfigMeta):
         return self._install_wheel
 
     @property
+    def isolate_windows(self) -> Set[str]:
+        """
+        Gets the list of package that are to  be installed in 32 or 64 bit locations.
+
+        The value for this property can be set in pyproject.toml (tool.oxt.isolate.windows)
+        """
+        return self._isolate_windows
+
+    @property
     def lo_identifier(self) -> str:
         """
         Gets the LibreOffice identifier, such as, ``org.openoffice.extensions.ooopip``
@@ -148,6 +160,24 @@ class BasicConfig(metaclass=ConfigMeta):
         This is the prefix for the resource properties.
         """
         return self._resource_properties_prefix
+
+    @property
+    def sym_link_cpython(self) -> bool:
+        """
+        Gets the flag indicating if CPython files should be symlinked on Linux AppImage and Mac OS.
+
+        The value for this property can be set in pyproject.toml (tool.oxt.config.sym_link_cpython)
+
+        If this is set to ``True`` then CPython will be symlinked on Linux AppImage and Mac OS.
+        """
+        return self._sym_link_cpython
+
+    @property
+    def uninstall_on_update(self) -> bool:
+        """
+        Gets the flag indicating if python packages should be uninstalled before updating.
+        """
+        return self._uninstall_on_update
 
     @property
     def window_timeout(self) -> int:

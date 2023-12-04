@@ -28,7 +28,7 @@ from ...settings.settings import Settings
 from ..file_open_dialog import FileOpenDialog
 from ..folder_open_dialog import FolderOpenDialog
 from ..message_dialog import MessageDialog
-from ...py_paths import PathItems, PathItem
+from ...py_paths import PathItems
 
 if TYPE_CHECKING:
     from com.sun.star.awt import ItemEvent  # struct

@@ -16,6 +16,8 @@ dialog_desktop_owned = false # determines if the dialog is owned by the desktop 
 resource_dir_name = "resources"
 resource_properties_prefix = "pipstrings"
 default_locale = ["en", "US"]
+sym_link_cpython = false # https://tinyurl.com/ymeh4c9j#sym_link_cpython
+uninstall_on_update = true # https://tinyurl.com/ymeh4c9j#uninstall_on_update uninstall previous python packages on update
 
 [tool.oxt.token]
 # in the form of "token_name": "token_value"
@@ -71,7 +73,7 @@ es = "Permite incluir paquetes de python en LibreOffice que no están incluidos 
 
 [tool.poetry]
 name = "LO PY Path"
-version = "1.3.0"
+version = "1.3.1"
 description = "Allows for including python packages in LibreOffice that are not included by default."
 authors = [":Barry-Thomas-Paul: Moss <bigbytetech@gmail.com>"]
 license = "MIT"
