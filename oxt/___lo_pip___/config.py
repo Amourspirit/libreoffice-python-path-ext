@@ -2,7 +2,7 @@
 # region Imports
 from __future__ import annotations
 from pathlib import Path
-from typing import Dict, List, TYPE_CHECKING
+from typing import Dict, List, Set, TYPE_CHECKING
 import json
 import os
 import sys
@@ -550,6 +550,13 @@ class Config(metaclass=Singleton):
         return self._startup_event
 
     @property
+    def uninstall_on_update(self) -> bool:
+        """
+        Gets the flag indicating if python packages should be uninstalled before updating.
+        """
+        return self.basic_config.uninstall_on_update
+
+    @property
     def window_timeout(self) -> int:
         """
         Gets the window timeout value.
@@ -559,6 +566,26 @@ class Config(metaclass=Singleton):
         This is the number of seconds to wait for the LibreOffice window to start before installing packages without requiring a LibreOffice window.
         """
         return self._basic_config.window_timeout
+
+    @property
+    def isolate_windows(self) -> Set[str]:
+        """
+        Gets the list of package that are to  be installed in 32 or 64 bit locations.
+
+        The value for this property can be set in pyproject.toml (tool.oxt.isolate.windows)
+        """
+        return self._basic_config.isolate_windows
+
+    @property
+    def sym_link_cpython(self) -> bool:
+        """
+        Gets the flag indicating if CPython files should be symlinked on Linux AppImage and Mac OS.
+
+        The value for this property can be set in pyproject.toml (tool.oxt.config.sym_link_cpython)
+
+        If this is set to ``True`` then CPython will be symlinked on Linux AppImage and Mac OS.
+        """
+        return self._basic_config.sym_link_cpython
 
     # endregion Properties
 
