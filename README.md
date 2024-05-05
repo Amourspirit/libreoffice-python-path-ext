@@ -56,14 +56,14 @@ Click on `Options`.
 
 Select the `Python Paths` option page.
 
-![2023-10-25_0-26-25](https://github.com/Amourspirit/libreoffice-python-path-ext/assets/4193389/9252c387-3157-40b2-bf9f-fe4dac92e2cf)
+![2023-10-25_0-26-25](https://github.com/Amourspirit/libreoffice-python-path-ext/assets/4193389/1355e836-6066-4022-a016-87b5d1aed217)
 
 Choose `Add Folder` and navigate to the Location of the `site-packages` for the virtual environment that was set up previously.
 
 ![2023-10-25_0-28-26](https://github.com/Amourspirit/libreoffice-python-path-ext/assets/4193389/918ceb02-765b-47a0-9908-fedea66caef7)
 
 Now the path is added to the extension. 
-![2023-10-25_0-29-10](https://github.com/Amourspirit/libreoffice-python-path-ext/assets/4193389/19c764a2-4045-4d08-85c8-7eab13316699)
+![2023-10-25_0-29-10](https://github.com/Amourspirit/libreoffice-python-path-ext/assets/4193389/1293a3b1-5beb-45f2-8e8a-345e7c8798ef)
 
 Click `OK` and restart LibreOffice and the path will be added to LibreOffice when it starts.
 
