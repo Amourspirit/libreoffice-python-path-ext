@@ -348,11 +348,15 @@ class ___lo_implementation_name___(unohelper.Base, XJob):
         py_paths = path_settings.py_paths
         if not py_paths:
             self._logger.debug("No python paths to add to sys.path")
-        for pth in py_paths:
+        if path_settings.py_path_append:
+            the_paths = [pth for pth in py_paths]
+        else:
+            the_paths = [pth for pth in reversed(py_paths)]
+        for pth in the_paths:
             if path_settings.py_path_verify and not Path(pth.path).exists():
                 self._logger.debug(f"Unable to register path. Path does not exist: {pth}")
                 continue
-            result = self._session.register_path(pth.path, True)
+            result = self._session.register_path(pth.path, path_settings.py_path_append)
             self._log_sys_path_register_result(pth.path, result)
 
     def _log_sys_path_register_result(self, pth: Path | str, result: RegisterPathKind) -> None:

@@ -21,7 +21,14 @@
             <prop oor:name="PyPathVerify" oor:type="xs:boolean">
                 <info>
                     <desc>
-                        Determins if the paths in PyPathsList are verified to exist before adding to sys.path.
+                        Determines if the paths in PyPathsList are verified to exist before adding to sys.path.
+                    </desc>
+                </info>
+            </prop>
+            <prop oor:name="PyPathAppend" oor:type="xs:boolean">
+                <info>
+                    <desc>
+                        Determines if the paths in PyPathsList appended or inserted in sys.path.
                     </desc>
                 </info>
             </prop>
