@@ -15,6 +15,7 @@ from com.sun.star.ui.dialogs import TemplateDescription
 from com.sun.star.awt.MessageBoxType import INFOBOX, ERRORBOX, QUERYBOX
 from com.sun.star.awt import MessageBoxButtons
 from com.sun.star.awt import MessageBoxResults
+from com.sun.star.resource import MissingResourceException
 
 
 from ...basic_config import BasicConfig
@@ -38,6 +39,8 @@ if TYPE_CHECKING:
     from com.sun.star.awt import UnoControlDialog  # service
     from com.sun.star.awt import UnoControlListBox  # service
     from com.sun.star.awt import UnoControlListBoxModel  # service
+    from com.sun.star.awt import UnoControlGroupBox  # service
+    from com.sun.star.awt import UnoControlGroupBoxModel  # service
 
 
 IMPLEMENTATION_NAME = f"{BasicConfig().lo_implementation_name}.PyPathsOptionsPage"
@@ -62,6 +65,10 @@ class CheckBoxListener(unohelper.Base, XPropertyChangeListener):
                 self._logger.debug("CheckBoxListener.propertyChange: chkVerify")
                 self.handler.path_verify = self.handler.state_to_bool(cast(int, (ev.NewValue)))
                 self._logger.debug(f"CheckBoxListener.propertyChange: chkVerify: {self.handler.path_verify}")
+            elif src.Name == "chkAppend":
+                self._logger.debug("CheckBoxListener.propertyChange: chkAppend")
+                self.handler.path_append = self.handler.state_to_bool(cast(int, (ev.NewValue)))
+                self._logger.debug(f"CheckBoxListener.propertyChange: chkAppend: {self.handler.path_append}")
         except Exception as err:
             self._logger.error(f"CheckBoxListener.propertyChange: {err}", exc_info=True)
             raise
@@ -140,6 +147,8 @@ class OptionsDialogHandler(unohelper.Base, XContainerWindowEventHandler):
         self._py_settings = PyPathsSettings()
         self._path_verify = True
         self._path_verify_orig = True
+        self._path_append = True
+        self._path_append_orig = True
         self._btn_link_visible = self._config.is_mac or self._config.is_app_image
         self._logger.debug("PyPaths-OptionsDialogHandler.__init__ done")
 
@@ -187,6 +196,13 @@ class OptionsDialogHandler(unohelper.Base, XContainerWindowEventHandler):
                 self._py_settings.py_path_verify = self._path_verify
             else:
                 self._logger.debug("PyPaths-OptionsDialogHandler._save_data: path_verify not changed")
+            if self._path_append_orig != self._path_append:
+                self._logger.debug(
+                    f"PyPaths-OptionsDialogHandler._save_data: path_append changed: {self._path_append}"
+                )
+                self._py_settings.py_path_append = self._path_append
+            else:
+                self._logger.debug("PyPaths-OptionsDialogHandler._save_data: path_append not changed")
             title = self._resource_resolver.resolve_string("msg09")
             msg = self._resource_resolver.resolve_string("msg10")
             _ = MessageDialog(
@@ -264,8 +280,13 @@ class OptionsDialogHandler(unohelper.Base, XContainerWindowEventHandler):
                     btn_unlink_model = self._get_model_unlink(window)
                     btn_unlink_model.setPropertyValue("EnableVisible", True)
 
+                    gb_model = self._get_model_link_unlink(window)
+                    gb_model.setPropertyValue("EnableVisible", True)
+
                 self._path_verify = self._py_settings.py_path_verify
                 self._path_verify_orig = self._path_verify
+                self._path_append = self._py_settings.py_path_append
+                self._path_append_orig = self._path_append
 
                 ellipse = self._resource_resolver.resolve_string("ellipse")
 
@@ -277,12 +298,25 @@ class OptionsDialogHandler(unohelper.Base, XContainerWindowEventHandler):
                         if model.Name in el_buttons:
                             model.Label = self._resource_resolver.resolve_string(model.Label) + ellipse
                         else:
-                            model.Label = self._resource_resolver.resolve_string(model.Label)
+                            try:
+                                lbl = self._resource_resolver.resolve_string(model.Label)
+                                model.Label = lbl
+                            except Exception as err:
+                                self._logger.warning(f"PyPaths-OptionsDialogHandler._load_data Resource Error: {err}")
+
                         if model.getServiceName() == "stardiv.vcl.controlmodel.Button" and model.HelpText:
-                            model.HelpText = self._resource_resolver.resolve_string(model.HelpText)
+                            try:
+                                txt = self._resource_resolver.resolve_string(model.HelpText)
+                                model.HelpText = txt
+                            except Exception as err:
+                                self._logger.warning(f"PyPaths-OptionsDialogHandler._load_data Resource Error: {err}")
                         if model.Name == "chkVerify":
                             model.State = self.bool_to_state(self.path_verify)
                             model.addPropertyChangeListener("State", chk_listener)
+                        elif model.Name == "chkAppend":
+                            model.State = self.bool_to_state(self.path_append)
+                            model.addPropertyChangeListener("State", chk_listener)
+                            model.HelpText = self._resource_resolver.resolve_string(model.HelpText)
 
                 self._init_list_data(window)
                 self._update_ui(False)
@@ -729,6 +763,9 @@ class OptionsDialogHandler(unohelper.Base, XContainerWindowEventHandler):
     def _get_ctl_move_down(self, window: UnoControlDialog) -> UnoControlButton:
         return cast("UnoControlButton", window.getControl("cmdMoveDown"))
 
+    def _get_ctl_link_unlink(self, window: UnoControlDialog) -> UnoControlGroupBox:
+        return cast("UnoControlGroupBox", window.getControl("grpLinkUnlink"))
+
     def _get_model_add(self, window: UnoControlDialog) -> UnoControlButtonModel:
         return cast("UnoControlButtonModel", self._get_ctl_add(window).getModel())
 
@@ -755,6 +792,9 @@ class OptionsDialogHandler(unohelper.Base, XContainerWindowEventHandler):
 
     def _get_model_move_down(self, window: UnoControlDialog) -> UnoControlButtonModel:
         return cast("UnoControlButtonModel", self._get_ctl_move_down(window).getModel())
+
+    def _get_model_link_unlink(self, window: UnoControlDialog) -> UnoControlGroupBoxModel:
+        return cast("UnoControlGroupBoxModel", self._get_ctl_link_unlink(window).getModel())
 
     # endregion Get Controls
 
@@ -842,5 +882,13 @@ class OptionsDialogHandler(unohelper.Base, XContainerWindowEventHandler):
     @path_verify.setter
     def path_verify(self, value: bool) -> None:
         self._path_verify = value
+
+    @property
+    def path_append(self) -> bool:
+        return self._path_append
+
+    @path_append.setter
+    def path_append(self, value: bool) -> None:
+        self._path_append = value
 
     # endregion Properties

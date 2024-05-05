@@ -14,6 +14,9 @@
     <prop oor:name="PyPathVerify" oor:type="xs:boolean">
       <value>true</value>
     </prop>
+    <prop oor:name="PyPathAppend" oor:type="xs:boolean">
+      <value>true</value>
+    </prop>
   </node>
   <node oor:name="Logging">
     <prop oor:name="LogFile" oor:type="xs:string">
