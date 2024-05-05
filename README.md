@@ -56,15 +56,14 @@ Click on `Options`.
 
 Select the `Python Paths` option page.
 
-![2023-10-25_0-26-25](https://github.com/Amourspirit/libreoffice-python-path-ext/assets/4193389/4a739a95-f131-42c2-bb0b-c1aa73260b0b)
+![2023-10-25_0-26-25](https://github.com/Amourspirit/libreoffice-python-path-ext/assets/4193389/9252c387-3157-40b2-bf9f-fe4dac92e2cf)
 
 Choose `Add Folder` and navigate to the Location of the `site-packages` for the virtual environment that was set up previously.
 
 ![2023-10-25_0-28-26](https://github.com/Amourspirit/libreoffice-python-path-ext/assets/4193389/918ceb02-765b-47a0-9908-fedea66caef7)
 
-
 Now the path is added to the extension. 
-![2023-10-25_0-29-10](https://github.com/Amourspirit/libreoffice-python-path-ext/assets/4193389/0ab1b6f4-dc7c-4a76-893f-3cf31235d731)
+![2023-10-25_0-29-10](https://github.com/Amourspirit/libreoffice-python-path-ext/assets/4193389/19c764a2-4045-4d08-85c8-7eab13316699)
 
 Click `OK` and restart LibreOffice and the path will be added to LibreOffice when it starts.
 
@@ -123,7 +122,7 @@ To remove symbolic links use the `Unlink..` button. It will prompt you to remove
 See also: [Python bug 36716](https://bugs.python.org/issue36716)
 
 
-![cpython options image](https://github.com/Amourspirit/libreoffice-python-path-ext/assets/4193389/c17f22c3-9416-4656-95ea-7e7da4fee928)
+![cpython options image](https://github.com/Amourspirit/libreoffice-python-path-ext/assets/4193389/e654a177-2d1a-46ea-8637-10665ccad47c)
 
 
 [Live LibreOffice Python Template]:https://github.com/Amourspirit/live-libreoffice-python

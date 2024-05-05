@@ -24,19 +24,24 @@ class PathItems:
         """Returns the length of the collection."""
         return len(self._paths)
 
-    def __iter__(self) -> PathItems:
-        """Returns an iterator object."""
+    def __iter__(self):
         self._iter_index = 0
-        return self
-
-    def __next__(self) -> PathItem:
-        """Returns the next path item in the collection."""
-        if self._iter_index < len(self._paths):
-            path = self._paths[self._iter_index]
+        while self._iter_index < len(self):
+            yield self._paths[self._iter_index]
             self._iter_index += 1
-            return path
-        else:
+
+    def __next__(self):
+        if self._iter_index > len(self):
             raise StopIteration
+        else:
+            self._iter_index += 1
+            return self._paths[self._iter_index - 1]
+
+    def __reversed__(self):
+        self._iter_index = len(self) - 1
+        while self._iter_index >= 0:
+            yield self._paths[self._iter_index]
+            self._iter_index -= 1
 
     def add(self, path: PathItem) -> None:
         """Adds a path item to the collection."""
